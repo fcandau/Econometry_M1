@@ -1,0 +1,28 @@
+# Local tooling (not for the public course repo)
+.claude/
+CLAUDE.md
+
+# Quarto / LaTeX intermediates
+*_files/
+.quarto/
+_png/
+_chk*
+
+# LaTeX aux
+*.aux
+*.log
+*.nav
+*.snm
+*.toc
+*.out
+*.synctex.gz
+
+# Legacy / private source — kept locally, excluded from the public repo
+Basic/Lecture/chap1.tex
+Basic/Lecture/chap2.tex
+time_series/chap3.tex
+time_series/chap4.tex
+time_series/chap5.tex
+Panel/Lecture/Chap6_en.tex
+Panel/Lecture/cluster.md
+IV_Shift_Share/Lecture/first_page.png

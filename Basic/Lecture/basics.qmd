@@ -1,0 +1,573 @@
+---
+title: "The Linear Model"
+subtitle: "OLS, Inference, and Diagnostics"
+author: "F. Candau (UPPA-TREE)"
+institute: "M1 ECO"
+date: today
+format:
+  beamer:
+    theme: Madrid
+    fonttheme: serif
+    include-in-header: preamble.tex
+    pdf-engine: pdflatex
+    slide-level: 2
+    toc: false
+bibliography: references.bib
+nocite: |
+  @wooldridge2025
+---
+
+## Where OLS comes from: Gauss and Ceres
+
+- **1801** — Giuseppe Piazzi spots **Ceres** (a dwarf planet in the asteroid belt),
+  then loses it behind the Sun after only a handful of noisy observations.
+- **The question:** *where will it reappear?*
+- The young **Carl Friedrich Gauss** computes the orbit with a new method — choose the
+  trajectory that **minimises the sum of squared residuals** (the gaps between the
+  observed positions and the predicted ones).
+- **Result:** an accurate prediction; Ceres is found again. **Ordinary Least Squares
+  (OLS)** is born.
+
+## OLS in one picture
+
+$$ y_i = \beta_0 + \beta_1 x_i + \varepsilon_i $$
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=10.6cm, height=5.2cm, xlabel={$x$}, ylabel={$y$},
+  xmin=0, xmax=9, ymin=0, ymax=6.2, axis lines=left, xtick=\empty, ytick=\empty,
+  clip=false]
+% scatter
+\addplot[only marks, bordeaux, mark=*, mark size=1.5pt] coordinates {
+  (0.5,1.5) (1,2.7) (1.5,0.9) (3,3.9) (3.5,2.6) (4,3.4) (4.5,2.2)
+  (5.5,4.3) (6,3.6) (6.5,5.4) (7,4.2) (7.5,5.0) (8,3.7) (8.5,5.4)};
+% highlighted observation and its prediction
+\addplot[only marks, black, mark=*, mark size=2.6pt] coordinates {(5,5.0)};
+\addplot[only marks, black, mark=o, mark size=2.4pt] coordinates {(5,3.5)};
+% OLS line  yhat = 1 + 0.5 x
+\addplot[black, very thick, domain=0:9] {1 + 0.5*x};
+% residual (vertical distance point -> line)
+\draw[bordeaux, very thick, dashed] (axis cs:5,3.5) -- (axis cs:5,5.0);
+% slope triangle
+\draw[gray] (axis cs:1.7,1.85) -- (axis cs:2.7,1.85) -- (axis cs:2.7,2.35);
+\node[font=\tiny, gray] at (axis cs:2.2,1.6) {$1$};
+\node[font=\tiny, gray, anchor=west] at (axis cs:2.75,2.1) {$\hat\beta_1$};
+% line equation, placed in the empty top-left (off the line)
+\node[font=\scriptsize, anchor=west] at (axis cs:0.4,5.9) {OLS line: $\hat y=\hat\beta_0+\hat\beta_1 x$};
+% labels for the highlighted observation (on the clear left side)
+\node[font=\scriptsize, anchor=east] at (axis cs:4.85,5.0) {$(x_i,y_i)$};
+\node[font=\scriptsize, anchor=east, text=bordeaux] at (axis cs:4.85,4.25) {$\hat\varepsilon_i$ (residual)};
+\node[font=\scriptsize, anchor=east] at (axis cs:4.85,3.5) {$\hat y_i$};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+OLS picks $(\hat\beta_0,\hat\beta_1)$ by **least squares** — minimising:
+$$ (\hat\beta_0,\hat\beta_1)=\arg\min_{\beta_0,\beta_1}\
+   \underbrace{\sum_{i}\big(\underbrace{y_i-\beta_0-\beta_1 x_i}_{\hat\varepsilon_i}\big)^2}_{\text{sum of squared residuals}}. $$
+
+## Solving for $\hat\beta$ (simple regression)
+
+Minimising the sum of squared residuals $S(\beta_0,\beta_1)=\sum_i (y_i-\beta_0-\beta_1 x_i)^2$,
+set its two derivatives to zero:
+$$ \sum_i (y_i-\hat\beta_0-\hat\beta_1 x_i)=0, \qquad
+   \sum_i x_i\,(y_i-\hat\beta_0-\hat\beta_1 x_i)=0. $$
+
+- The first gives $\hat\beta_0=\bar y-\hat\beta_1\bar x$ — the line passes through
+  $(\bar x,\bar y)$.
+- Substituting into the second and solving for the slope:
+$$ \hat\beta_1=\frac{\sum_i (x_i-\bar x)(y_i-\bar y)}{\sum_i (x_i-\bar x)^2}
+   =\frac{\Cov(x,y)}{\Var(x)}. $$
+
+\footnotesize
+($\bar x=\tfrac1n\sum_i x_i$ is the sample mean; a hat marks an estimate. The $1/n$ in
+$\Cov$ and $\Var$ cancels, so this ratio of moments equals the ratio of sums above.)
+
+## Multiple regression
+
+$$ y_i = \beta_0 + \beta_1 x_{1i} + \dots + \beta_k x_{ki} + \varepsilon_i $$
+
+- Here $k$ is the **number of explanatory variables** (slopes); with the intercept
+  there are $k+1$ coefficients.
+- Each $\beta_j$ is the effect of $x_j$ **holding the other regressors fixed** —
+  identified from the variation in $x_j$ *conditional on* the others.
+- OLS minimises $\sum_i (y_i - x_i'\beta)^2$, with closed-form solution
+$$ \boxed{\;\hat\beta = (X'X)^{-1}X'y\;} $$
+where $X$ is the $n\times(k{+}1)$ matrix of regressors and a **prime** denotes the
+**transpose** (so $X'$ is $X$ flipped — rows become columns).
+
+## OLS by hand: a worked example
+
+A small case — **3 observations, 2 parameters** — you can check on the board. Model
+$y=\beta_0+\beta_1 x$ with points $(x,y)=(1,2),(2,2),(3,5)$:
+$$ X=\begin{pmatrix}1&1\\1&2\\1&3\end{pmatrix},\;\; y=\begin{pmatrix}2\\2\\5\end{pmatrix},\;\;
+   X'X=\begin{pmatrix}3&6\\6&14\end{pmatrix},\;\; X'y=\begin{pmatrix}9\\21\end{pmatrix}. $$
+$$ (X'X)^{-1}=\frac{1}{6}\begin{pmatrix}14&-6\\-6&3\end{pmatrix},\qquad
+   \hat\beta=(X'X)^{-1}X'y=\begin{pmatrix}\hat\beta_0\\\hat\beta_1\end{pmatrix}
+   =\begin{pmatrix}0\\1.5\end{pmatrix}. $$
+
+- First column of $X$ is **1s** (the intercept); $\det(X'X)=42-36=6$.
+- **Check:** $\hat\beta_1=\dfrac{\sum_i(x_i-\bar x)(y_i-\bar y)}{\sum_i(x_i-\bar x)^2}=\dfrac{3}{2}=1.5$
+  — the matrix formula reproduces the simple-regression slope. (More regressors
+  $\Rightarrow$ $X$ gains columns; need $n\ge k+1$.)
+
+## Roadmap
+
+We can already *compute* $\hat\beta$. The rest of the lecture asks four questions:
+
+1. **Interpret** — what does a coefficient *mean*?
+2. **Inference** — is it *real* (precise, significant)?
+3. **Assumptions — and when they fail** — is it *valid* (unbiased, honest SE)?
+4. **Doing it in Python** (pandas + statsmodels).
+
+# Interpreting coefficients
+
+## Interpretation of coefficients
+
+\small
+| model | equation | a change in $x$ … | … changes $y$ by |
+|---|---|---|---|
+| level–level | $y=\beta_0+\beta_1 x$ | $+1$ unit | $\beta_1$ units |
+| log–level | $\ln y=\beta_0+\beta_1 x$ | $+1$ unit | $100\,(e^{\beta_1}-1)\,\%$ |
+| level–log | $y=\beta_0+\beta_1\ln x$ | $+1\%$ | $\beta_1/100$ units |
+| log–log | $\ln y=\beta_0+\beta_1\ln x$ | $+1\%$ | $\beta_1\,\%$ (elasticity) |
+
+\normalsize
+For small $\beta_1$ these collapse to the familiar approximations (e.g. log–level
+$\approx 100\beta_1\%$); the exact forms matter only when $\beta_1$ is sizeable.
+
+## Example: the gender wage gap
+
+$$ \ln(\text{wage}_i) = \beta_0 + \beta_1\,\text{woman}_i + \varepsilon_i, \qquad
+   \hat\beta_1 \approx -0.285. $$
+
+Women earn on average $\approx \mathbf{24.8\%}$ less than men (INSEE, 2017). For a log
+outcome with a **dummy** regressor, use the exact effect:
+$$ e^{\hat\beta_1}-1 = e^{-0.285}-1 = -0.248 = -24.8\%. $$
+
+## Ceteris paribus
+
+Add controls — education, experience, hours, occupation, sector:
+$$ \ln(\text{wage}_i)=\beta_0+\beta_1\,\text{woman}_i+\beta_2\,\text{educ}_i+\dots+\varepsilon_i,
+   \qquad \hat\beta_1\approx -0.10. $$
+
+- **"All else equal,"** women earn $\approx \mathbf{9.5\%}$ less — exactly
+  $e^{-0.10}-1=-0.095$. The gap shrinks once we hold **observables** fixed, but only
+  the *observed* ones.
+- **Careful — not every control helps.** A variable that is itself a *consequence* of
+  being a woman (occupation, sector — if discrimination channels women into lower-paid
+  roles) is a **bad control**: adding it can *hide* part of the true gap. Which controls
+  to include is already a causal question.
+
+\begin{alertblock}{What's left to check}
+We have read these coefficients at face value. Two questions remain: are they
+statistically distinguishable from zero (\textbf{inference}, next), and are they
+unbiased in the first place (\textbf{assumptions}, after)?
+\end{alertblock}
+
+# Inference
+
+## The true $\beta$ we never observe
+
+- Behind the data is a **population** (a data-generating process) with a **true but
+  unknown** coefficient $\beta$ — the effect of $x$ on $y$ for *everyone*. We never see
+  it.
+- From **one sample** of $n$ units we compute an **estimate** $\hat\beta$. A *different*
+  sample would give a *different* $\hat\beta$ — so $\hat\beta$ is **random**, with a
+  **sampling distribution**:
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=9.2cm,height=3.5cm, axis y line=none, axis x line=bottom,
+  xtick={0}, xticklabels={$\beta$}, domain=-3.5:3.5, samples=90,
+  enlarge x limits=false, clip=false]
+\addplot[draw=bordeaux, thick, fill=bordeaux!12] {exp(-x^2/2)} \closedcycle;
+\draw[dashed] (axis cs:0,0) -- (axis cs:0,1);
+\filldraw[bordeaux] (axis cs:0.9,0) circle (1.3pt) node[below=1pt,font=\scriptsize]{$\hat\beta$};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+\footnotesize
+One sample gives one draw $\hat\beta$ from this curve. **Inference** asks how far it is
+likely to land from the true $\beta$. *(The curve is drawn centred at $\beta$ — that OLS
+is unbiased is the next slide.)*
+
+## How precise is $\hat\beta$? The standard error
+
+- OLS is **unbiased** (and **consistent**): across samples $\hat\beta$ is centred on the
+  truth, $\E(\hat\beta)=\beta$.
+- The **standard error** is the **standard-deviation spread** of that curve,
+  $\widehat{\text{se}}(\hat\beta)=\sqrt{\widehat{\Var}(\hat\beta)}$ — how far a typical
+  $\hat\beta$ lands from $\beta$.
+- In simple regression $\Var(\hat\beta_1)=\dfrac{\sigma^2}{\sum_i (x_i-\bar x)^2}$, with
+  $\sigma^2=\Var(\varepsilon_i)$ the error variance (estimated by
+  $\hat\sigma^2=\text{RSS}/(n-k-1)$, with RSS the **residual sum of squares**
+  $\sum_i\hat\varepsilon_i^2$). So the SE is **smaller** when $n$ is large, the
+  regressor varies more ($\sum_i(x_i-\bar x)^2=n\,\Var(x)$), or residuals are tight.
+
+\footnotesize
+$n-k-1$ is the **degrees of freedom** — we "use up" $k{+}1$ observations estimating the
+coefficients. This is the *classical* SE (valid under homoskedasticity); we will see it
+can be wrong, and how to fix it (robust SE).
+
+## Student's $t$: a story
+
+- W. S. **Gosset**, a chemist at **Guinness**, needed to compare beer batches from
+  **small samples** — and published under the pen-name *"Student"*.
+- His **$t$-distribution** describes the estimator's behaviour when $\sigma^2$ is itself
+  estimated and $n$ is small — exactly our situation.
+- *Hold your beer:* it is the workhorse of significance testing.
+
+## The $t$-statistic: $\hat\beta$ in standard-error units
+
+To test $H_0:\beta_k=\beta_k^0$ (usually $\beta_k^0=0$): how far is $\hat\beta_k$ from
+the hypothesised value, **measured in standard errors**?
+$$ t=\frac{\hat\beta_k-\beta_k^0}{\widehat{\text{se}}(\hat\beta_k)}
+   \;\xrightarrow{\;H_0:\beta_k=0\;}\; \frac{\hat\beta_k}{\widehat{\text{se}}(\hat\beta_k)}. $$
+
+- So $t$ is the estimate in **se units**: $t=2$ means $\hat\beta_k$ sits two standard
+  errors from $0$. A **large $|t|$** $\Rightarrow$ $\hat\beta_k$ is far from $0$ relative
+  to its noise $\Rightarrow$ implausible if the true $\beta_k$ were $0$.
+- Under the assumptions (normal errors), $t$ follows **Student's $t$ with $n-k-1$
+  degrees of freedom**, which $\to \mathcal N(0,1)$ as $n$ grows.
+- **Why $t$, not the normal?** Because we *estimate* $\sigma^2$ inside
+  $\widehat{\text{se}}$; that extra uncertainty **fattens the tails** in small samples —
+  Gosset's discovery.
+
+## Reading the $t$: critical values and rejection
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=10cm,height=3.9cm, axis y line=none, axis x line=bottom,
+  xtick={-1.96,0,1.96}, xticklabels={$-1.96$,$0$,$1.96$}, domain=-4:4, samples=120,
+  enlarge x limits=false, clip=false]
+\addplot[draw=none, fill=bordeaux!30, domain=1.96:4, samples=40] {exp(-x^2/2)} \closedcycle;
+\addplot[draw=none, fill=bordeaux!30, domain=-4:-1.96, samples=40] {exp(-x^2/2)} \closedcycle;
+\addplot[draw=bordeaux, thick] {exp(-x^2/2)};
+\draw[dashed] (axis cs:1.96,0) -- (axis cs:1.96,{exp(-1.96^2/2)});
+\draw[dashed] (axis cs:-1.96,0) -- (axis cs:-1.96,{exp(-1.96^2/2)});
+\draw[thick] (axis cs:2.4,0) -- (axis cs:2.4,0.7) node[above,font=\scriptsize]{$t_{\text{obs}}$};
+\node[font=\scriptsize] at (axis cs:0,0.45) {do not reject};
+\node[font=\scriptsize,text=bordeaux] at (axis cs:2.95,0.13) {reject};
+\node[font=\scriptsize,text=bordeaux] at (axis cs:-2.95,0.13) {reject};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+- Under $H_0$, $t$ is centred at $0$. **Reject** $H_0$ when $t$ lands in the **tails**,
+  beyond the **critical value**.
+- Two-sided $5\%$: reject if $|t|>1.96$ (shaded $2.5\%+2.5\%$). Other levels:
+  $10\%\to 1.645$, $1\%\to 2.58$. *(Small $n$: the threshold is larger — e.g. $\approx
+  2.2$ at 10 d.f.; read it off the $t$-table.)*
+- **Rule of thumb:** $|\hat\beta_k|>2\,\widehat{\text{se}}$ $\Rightarrow$ significant at
+  $5\%$. (The $p$-value, next, is the tail area beyond the observed $|t|$.)
+
+## $p$-values and confidence intervals
+
+\begin{alertblock}{What a $p$-value is --- and is not}
+The $p$-value is the probability, \textbf{if $H_0$ were true}, of a $|t|$ at least as
+large as the one observed. A small $p$ means the data are unlikely under $H_0$, so we
+reject. \\[3pt]
+It is \textbf{not} the probability that $H_0$ is true.
+\end{alertblock}
+
+- **95% confidence interval:** $\hat\beta_k\pm 1.96\,\widehat{\text{se}}(\hat\beta_k)$.
+  If it **excludes 0**, reject $H_0$ at $5\%$ (equivalent to the $t$-test).
+- **But significance is not effect size**, and insignificance is not "no effect" — see
+  the next slide.
+
+## Significance is not effect size: power and magnitude
+
+\begin{block}{Power --- the chance of catching a true effect}
+The \textbf{power} of a test is the probability it rejects $H_0$ \emph{when $H_0$ is
+false} — i.e. detects a real effect. It \textbf{rises} with the sample size $n$, the
+size of the true effect, and precision (small SE).
+\end{block}
+
+- **Small $n$ $\Rightarrow$ low power:** a real, theory-backed effect can look
+  **insignificant** only because the SE is large. *Absence of evidence is not evidence
+  of absence* — get **more data**, don't drop the variable.
+- **Large $n$ $\Rightarrow$ almost everything rejects $H_0$:** even economically trivial
+  effects become "significant."
+
+**Judge the magnitude concretely:** convert $\hat\beta$ to real units (via the
+functional form), compare it to a **benchmark** (the mean or SD of $y$, a policy
+threshold, other studies), and read the **whole CI** — a wide interval is
+*uninformative*, not *zero*.
+
+## Reading the whole output: $R^2$ and the $F$-test
+
+\begin{block}{$R^2$ --- goodness of fit}
+Total variation in $y$ splits into explained and residual parts:
+$$ \sum_i(y_i-\bar y)^2=\sum_i(\hat y_i-\bar y)^2+\sum_i\hat\varepsilon_i^2, $$
+the \emph{total} (TSS), \emph{explained} (ESS) and \emph{residual} (RSS) sum of squares.
+Then $R^2=\dfrac{\text{ESS}}{\text{TSS}}=1-\dfrac{\text{RSS}}{\text{TSS}}\in[0,1]$ — the
+share of $y$'s variance the model explains.
+\end{block}
+
+- **High $R^2 \neq$ good estimate:** a biased $\hat\beta$ can fit well, and a valid
+  causal effect can have low $R^2$. *Fit $\neq$ correctness* (adjusted $R^2$ penalises
+  extra regressors).
+- **The $F$-test** checks **joint** significance ($H_0$: several slopes $=0$ at once) —
+  also printed in every output. Handy under multicollinearity: individual $t$'s look
+  insignificant, yet the joint $F$ is significant.
+
+# The assumptions — and when they fail
+
+## The OLS assumptions (Gauss–Markov)
+
+\begin{enumerate}
+\item \textbf{Linearity in parameters:} $y = X\beta + \varepsilon$.
+\item \textbf{Exogeneity (zero conditional mean):} $\E(\varepsilon_i \mid X)=0$.
+\item \textbf{Homoskedasticity:} $\Var(\varepsilon_i\mid X)=\sigma^2$ (constant).
+\item \textbf{No autocorrelation:} $\Cov(\varepsilon_i,\varepsilon_j\mid X)=0$, $i\neq j$.
+\item \textbf{No perfect multicollinearity} — needed for $(X'X)^{-1}$ to exist.
+\end{enumerate}
+
+\footnotesize
+(Normality of the errors is added *only* for exact small-sample $t$-tests.) Here
+$\E[\,\cdot\mid X]$ is the **expectation** given the regressors; $\Cov,\Var$ are
+covariance and variance.
+
+\normalsize
+\begin{block}{What each assumption buys}
+\textbf{1--2} $\Rightarrow$ OLS is \textbf{unbiased \& consistent}. Adding
+\textbf{3--4} $\Rightarrow$ it is \textbf{BLUE} (minimum variance among linear unbiased
+estimators). Each "when it fails" slide drops one and asks what breaks.
+\end{block}
+
+## Heteroskedasticity: a variance problem
+
+Heteroskedasticity is always a problem with the **variance (volatility)** of the
+forecast errors:
+
+- **Cross-section:** the error variance varies with the explanatory variable $x_i$.
+- **Time series:** the error variance varies with the explanatory variable $x_t$.
+- **Spatial (cross-sectional) form:** the error *variance* differs systematically across
+  places — e.g. larger in some regions than others. *(Variance, not correlation —
+  error correlation across units is autocorrelation, next.)*
+- **Another time-series form:** the error variance at $t$ varies with the variance of
+  *past* errors.
+
+## Homoskedasticity vs. heteroskedasticity
+
+\begin{center}
+\begin{tikzpicture}
+\begin{axis}[width=5.4cm,height=4.4cm,title={Homoskedastic},
+  xlabel={$x$},ylabel={$y$},grid=major,ticks=none]
+\addplot[only marks,bordeaux,mark=*,mark size=1pt,domain=0:10,samples=45] {x*0.5 + rand*1};
+\addplot[black,thick,domain=0:10,samples=2] {x*0.5};
+\end{axis}
+\end{tikzpicture}\hfill
+\begin{tikzpicture}
+\begin{axis}[width=5.4cm,height=4.4cm,title={Heteroskedastic},
+  xlabel={$x$},ylabel={$y$},grid=major,ticks=none]
+\addplot[only marks,bordeaux,mark=*,mark size=1pt,domain=0:10,samples=45] {x*0.5 + rand*x*0.25};
+\addplot[black,thick,domain=0:10,samples=2] {x*0.5};
+\end{axis}
+\end{tikzpicture}
+\end{center}
+
+Left: residual spread is roughly **constant**. Right: it **fans out** with $x$. Beware
+— correlated errors can look similar, so rely on **formal tests**, not the eye.
+
+## Heteroskedasticity: detection
+
+$\Var(\varepsilon_i\mid X)$ is **not** constant. Then OLS is still **unbiased** but no
+longer efficient, and **default standard errors are wrong** $\Rightarrow$ invalid
+$t$-tests.
+
+\begin{block}{Tests ($H_0$: homoskedasticity)}
+\textbf{Breusch--Pagan:} regress $\hat\varepsilon_i^2$ on the regressors,
+$\hat\varepsilon_i^2=\delta_0+\delta_1 x_{1i}+\dots+v_i$, and test $\delta_1=\dots=0$.\\
+\textbf{White:} same idea, adding \emph{squares} and \emph{interactions}.
+\end{block}
+
+$p<0.05 \Rightarrow$ reject homoskedasticity. ($\hat\varepsilon_i=y_i-x_i'\hat\beta$ are
+the **residuals** — the estimated errors.)
+
+## Heteroskedasticity: the fix
+
+\begin{block}{Use robust standard errors by default}
+Heteroskedasticity-consistent (\textbf{HC} / White) standard errors fix inference
+without changing $\hat\beta$.
+\end{block}
+
+- The **sandwich** covariance (White, 1980):
+$$ \widehat{\Var}(\hat\beta)=(X'X)^{-1}\,X'\operatorname{diag}(\hat\varepsilon_i^2)\,X\,(X'X)^{-1}, $$
+where $\operatorname{diag}(\hat\varepsilon_i^2)$ is the diagonal matrix of squared
+residuals.
+
+- **$\hat\beta$ is unchanged** — only the SE (hence $t$, $p$, CIs) are corrected.
+- The form shown is **HC0**; finite-sample versions inflate the squared residuals —
+  **`HC3`** is the recommended default.
+- Alternative: **GLS / FGLS** model the variance explicitly (less common in practice).
+
+## Autocorrelation: an error-correlation problem
+
+Autocorrelation is no longer about the *variance* of the error, but about the **error
+itself being correlated** across observations:
+
+- **Cross-section:** one unit's errors affect another's — when units share common
+  characteristics or factors that create dependence. *Example: spatial data.*
+- **Time series:** the error at $t$ is a function of past errors ($t-1, t-2, \dots$).
+
+## Autocorrelation: tests and fix
+
+Formally, $\Cov(\varepsilon_i,\varepsilon_j)\neq 0$:
+
+- **spatial:** $\varepsilon_i=\rho\sum_{j\neq i} w_{ij}\varepsilon_j+u_i$ ($w_{ij}$ a
+  proximity weight);
+- **time series:** $\varepsilon_t=\rho_1\varepsilon_{t-1}+\dots+\rho_p\varepsilon_{t-p}+u_t$.
+
+OLS stays unbiased, but **standard errors are wrong**.
+
+- **Tests:** Durbin–Watson ($DW\approx 2$: none; $\approx 0$: positive; $\approx 4$:
+  negative — but invalid with a lagged dependent variable); Breusch–Godfrey
+  (higher-order, valid with lagged $y$).
+- **Fix:** **HAC** SE (Newey–West, 1987) — robust to *both* heteroskedasticity and
+  autocorrelation; or Cochrane–Orcutt / Prais–Winsten.
+
+## Multicollinearity
+
+Two or more regressors are strongly linearly related, e.g. $x_1\approx a+b\,x_2$:
+$$ y=\beta_0+\beta_1 x_1+\beta_2 x_2+\varepsilon. $$
+
+- Consequences: **unstable** coefficients (signs flip), **inflated** standard errors /
+  wide CIs, hard to separate individual effects. *($\hat\beta$ stays unbiased.)*
+- **Detect:** variance inflation factor (VIF). **Fix:** drop or combine variables; get
+  more data.
+- *Example:* regressing salary on **age and experience** — highly correlated, so
+  $\beta_1,\beta_2$ are hard to pin down.
+
+## Non-normality of residuals
+
+- Normal errors are needed for **exact small-sample** $t$-tests — **not** for
+  unbiasedness, and not asymptotically (the CLT rescues large $n$).
+- **Test:** Jarque–Bera ($H_0$: residuals are normal); $p<0.05 \Rightarrow$ reject.
+- If violated **and** $n$ small: use the **bootstrap** — resample the data with
+  replacement many times to approximate the sampling distribution of $\hat\beta$.
+
+## Endogeneity: the deepest problem
+
+When $\E(\varepsilon\mid X)\neq 0$, OLS is **biased** — and no robust SE can fix that.
+Three sources:
+
+- **omitted variables**, **reverse causality**, **measurement error**.
+
+**Which way does omitted-variable bias go?** Its sign is (effect of the omitted variable
+on $y$) $\times$ (its correlation with $x$). *Wage gap:* education/ability raise wages
+and correlate with the woman dummy in the raw data, biasing the uncontrolled gap —
+adding controls moved $-0.285\to-0.10$.
+
+\begin{block}{Causal inference (the rest of the course)}
+Designed to defeat the first two. Four workhorses:
+randomized experiments, \textbf{difference-in-differences}, regression discontinuity,
+and \textbf{instrumental variables} (later: shift-share).
+\end{block}
+
+# Estimating in Python
+
+## The toolkit: which package, for what
+
+\small
+| package | use it for |
+|---|---|
+| `pandas` | load, inspect, clean, merge, transform data (the `DataFrame`) |
+| `numpy` | numerical operations (logs, powers, arrays) |
+| `statsmodels` | **estimation + inference** (coef, se, $t$, $p$, CI) and **diagnostic tests** |
+| `matplotlib` | plots and visual checks |
+
+\normalsize
+Typical workflow: **load $\to$ inspect $\to$ transform $\to$ estimate $\to$ robust SE
+$\to$ diagnostics.** (Fixed effects and IV come later, with `pyfixest`.)
+
+## Load and inspect (pandas)
+
+```{python}
+#| eval: false
+#| echo: true
+import pandas as pd
+
+df = pd.read_stata("wage.dta")        # or read_csv / read_excel
+df.head(); df.describe(); df.info()   # inspect first!
+df = pd.merge(df, dr, on="id", how="inner")
+```
+
+- **Always inspect before estimating**: types, ranges, missing values, oddities.
+- `merge`: `inner` keeps matched rows, `outer` keeps all (gaps → `NaN`), `left`/`right`
+  keep one side. Windows paths: prefix with `r"..."`.
+
+## Transform variables (pandas + numpy)
+
+```{python}
+#| eval: false
+#| echo: true
+import numpy as np
+
+df["lwage"]  = np.log(df["wage"])     # logs via numpy
+df["exper2"] = df["exper"]**2         # quadratic term
+```
+
+- For **dummies/categoricals**, don't recode by hand — let the formula do it with
+  `C(...)`: e.g. `C(sector)` expands a category into dummies (one level kept as
+  baseline).
+
+## Estimate and read the output (statsmodels)
+
+```{python}
+#| eval: false
+#| echo: true
+import statsmodels.formula.api as smf
+
+f = "lwage ~ woman + educ + exper"
+m = smf.ols(f, df).fit()
+print(m.summary())     # coef, se, t, p-value, 95% CI
+```
+
+- Formula syntax: `~` splits $y$ from the regressors; `x1*x2` adds both terms **and**
+  their interaction; `C(g)` makes dummies.
+- Each summary row is exactly what we covered: $\hat\beta$, its se, the $t$-stat, the
+  $p$-value, and the 95% CI.
+
+## Best practice: robust standard errors by default
+
+```{python}
+#| eval: false
+#| echo: true
+# reuse the formula f from the previous slide
+m = smf.ols(f, df).fit(cov_type="HC3")   # robust SE
+m = smf.ols("y ~ x", df).fit(cov_type="HAC",
+            cov_kwds={"maxlags": 4})     # time series
+```
+
+- `cov_type="HC3"` leaves $\hat\beta$ unchanged and corrects se, $t$, $p$, CI — make it
+  your **default** in cross-sections.
+- For time series use **HAC** (Newey–West); set `maxlags` from the data frequency.
+
+## Diagnostics, when you need them (statsmodels.stats)
+
+```{python}
+#| eval: false
+#| echo: true
+from statsmodels.stats import diagnostic as smd
+from statsmodels.stats.stattools import jarque_bera
+
+_, p_white, _, _ = smd.het_white(m.resid, m.model.exog)
+_, p_bp, _, _    = smd.het_breuschpagan(m.resid, m.model.exog)
+jb, p_jb, *_     = jarque_bera(m.resid)            # normality
+```
+
+- With robust SE already the default, you test mainly to **understand** the data — and
+  to decide whether time-series data need **HAC**. A small $p$ flags the problem.
+- **Don't test-then-switch:** pre-testing distorts inference; defaulting to robust SE
+  avoids it. (`het_white` can fail with many regressors — fall back to Breusch–Pagan.)
+
+## Reference
+
+The single text for this course — read it for the full, detailed bibliography behind
+everything in these slides:
+
+::: {#refs}
+:::
