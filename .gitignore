@@ -11,14 +11,12 @@
 # 2) but descend into sub-directories so the allow-list below can match
 !*/
 
-# 3) allow the writing source + rendered PDFs/HTML decks + repo essentials
+# 3) allow the writing source + rendered PDFs + repo essentials
 !**/*.qmd
 !**/preamble.tex
 !**/*.bib
 !**/gen_figs.py
-!**/*.scss
 !**/Lecture/*.pdf
-!**/Lecture/*.html
 !README.md
 !.nojekyll
 !.gitignore
