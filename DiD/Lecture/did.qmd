@@ -2,23 +2,36 @@
 title: "Difference-in-Differences"
 subtitle: "Design, Dynamics, Continuous and Staggered Treatment"
 author: "F. Candau (UPPA-TREE)"
-institute: "M1 ECO"
-date: today
 format:
   beamer:
     theme: Madrid
-    fonttheme: serif
+    classoption: ["10pt"]
     include-in-header: preamble.tex
     pdf-engine: pdflatex
     slide-level: 2
     toc: false
 bibliography: references.bib
 nocite: |
-  @bekeskezdi2021, @cardkrueger1994, @goodmanbacon2021, @dcdh2020,
+  @cardkrueger1994, @goodmanbacon2021, @dcdh2020,
   @callawaysantanna2021, @sunabraham2021, @borusyak2024, @cgs2024,
   @roth2022, @roth2023, @stevensonwolfers2006, @gpss2020, @bdm2004,
   @cunningham2021, @freyaldenhoven2021
 ---
+
+## Causal inference and the counterfactual
+
+**Difference-in-differences** (hereafter **DiD**) is a method of **causal inference** — it
+identifies a cause-and-effect relationship. It turns on one question:
+*what would have happened had the shock or policy never occurred?* From that
+**counterfactual** we recover the effect of the shock or the policy.
+
+It is the very stuff of science fiction — stories built on an alternative history or a
+parallel world: *The Man in the High Castle* (P. K. Dick), *Back to the Future*,
+*Doctor Strange* (Marvel), and many more.
+
+\begin{center}
+\includegraphics[width=\linewidth]{fig/sc_fi.png}
+\end{center}
 
 ## What is difference-in-differences?
 
@@ -38,16 +51,38 @@ group. The second difference nets out fixed level differences \emph{and} common 
 
 ## The origin: John Snow and cholera (1855)
 
-The **first** difference-in-differences. John Snow argued cholera spread through
-**contaminated water**, not air. A water reform left some London districts on **clean
-upstream** water (treated), others on **sewage-contaminated** water (control).
+\begin{columns}[T]
+\begin{column}{0.42\textwidth}
+\includegraphics[width=\linewidth]{fig/map_snow.png}
+\end{column}
+\begin{column}{0.58\textwidth}
+\small
+\textbf{Origin: epidemiology} --- the fight against cholera in London. Cholera was assumed
+to be transmitted by \textbf{air}; John Snow (1855) argued instead that it came from
+\textbf{infected water}.
+
+\medskip
+\textbf{How to prove it?} A \emph{natural experiment}. The whole city drew water from the
+same point in the Thames, until a reform split the supply: some districts now received
+water from \textbf{downstream} of the sewers (infected), others from \textbf{upstream}
+(assumed uncontaminated).
+
+\medskip
+$\Rightarrow$ \emph{treated vs control}, \emph{before vs after} --- the first
+difference-in-differences.
+\end{column}
+\end{columns}
+
+## The difference-in-differences logic
+
+The **treatment** is that some neighbourhoods now receive **uncontaminated water**. We look
+at the **before vs after** for treated and untreated neighbourhoods (the **first
+difference**), then take the difference **between the two groups** (the **second
+difference**). Any factor that hits **both** groups at once is thereby **eliminated**.
 
 \begin{center}
-\includegraphics[width=0.5\textwidth]{fig/snow.png}
+\includegraphics[width=0.68\textwidth]{fig/did.png}
 \end{center}
-
-Cholera deaths **before vs after** $\times$ **treated vs control**: the second difference
-nets out everything common to both and isolates the water effect.
 
 ## Roadmap
 
@@ -117,16 +152,26 @@ $$ \widehat{\text{ATT}}=\underbrace{(\bar y_{T,\text{post}}-\bar y_{T,\text{pre}
 
 ## Parallel trends: the identifying assumption
 
+\begin{columns}[T]
+\begin{column}{0.64\textwidth}
 \begin{alertblock}{Parallel trends}
-Absent treatment, treated and control would have moved together — equal trends in the
-\textbf{untreated} potential outcome:
-$$ \E[Y_{it}(0)-Y_{i,t-1}(0)\mid D_i=1]=\E[Y_{it}(0)-Y_{i,t-1}(0)\mid D_i=0]. $$
+Had the treated group \emph{not} been treated, its outcome would have changed over time by
+the \textbf{same amount} as the control group. Writing $\Delta Y_i(0)$ for that change in
+the \textbf{untreated} outcome:
+$$ \E[\Delta Y_i(0)\mid D_i=1]=\E[\Delta Y_i(0)\mid D_i=0]. $$
 \end{alertblock}
-
-- It licenses using the control's change as the treated's missing counterfactual change.
-- **Levels** may differ freely (fixed effects absorb them) — only the **trend** must match.
-- **Untestable** (it concerns an unobserved counterfactual): defended with pre-period
-  evidence and economic argument, not proved.
+\begin{itemize}
+\item \textbf{Levels} may differ freely (fixed effects absorb them) --- only the
+\textbf{trend} must match.
+\item \textbf{Untestable} (it concerns an unobserved counterfactual): defend it with
+pre-period evidence and economic argument --- you cannot prove it.
+\end{itemize}
+\end{column}
+\begin{column}{0.34\textwidth}
+\centering
+\includegraphics[width=\linewidth]{fig/para.png}
+\end{column}
+\end{columns}
 
 ## The regression form
 
@@ -178,7 +223,7 @@ Beyond parallel trends, a credible DiD needs:
   errors badly understate uncertainty (the Bertrand–Duflo–Mullainathan 2004 problem from
   the panel chapter) $\Rightarrow$ **cluster** by unit/group.
 
-# Dynamics: event studies and two-way fixed effects
+# Dynamics: event studies
 
 ## From the $2\times2$ to panel TWFE
 
@@ -233,9 +278,13 @@ Most policies roll out **gradually**: unit $i$ is first treated at date $g_i$.
 
 - Example — Emission Control Areas: Baltic (2006), North Sea (2007), North America
   (2012), Caribbean (2014).
-- The natural move is the same TWFE regression, with $d_{it}=\mathbf{1}\{t\ge g_i\}$:
+- The natural move is the same **static** TWFE — one switch
+  $d_{it}=\mathbf{1}\{t\ge g_i\}$, one coefficient:
   $$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}. $$
-- **This is where it breaks.**
+- The **dynamic** form you usually see swaps the switch for leads and lags,
+  $\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g_i=k\}$ — one coefficient per event time.
+- **This is where it breaks** — the static $\beta$ first (next slides), and the dynamic
+  $\beta_k$ with it under staggered timing.
 
 ## The TWFE trap: forbidden comparisons
 
@@ -310,10 +359,10 @@ Software builds the comparisons for you — but you must supply $g_i$.
 
 ## Example: unilateral divorce and suicide
 
-\begin{block}{Unilateral divorce and female suicide (Goodman-Bacon 2021)}
+\begin{block}{Unilateral divorce and women's suicide (Goodman-Bacon 2021)}
 US states adopted unilateral divorce at staggered dates (California 1969 \dots; a few
 never). Re-analysing Stevenson \& Wolfers (2006), Goodman-Bacon shows the \textbf{TWFE}
-estimate of the fall in female suicide is \textbf{smaller} than the timing-robust one
+estimate of the fall in women's suicide is \textbf{smaller} than the timing-robust one
 ($-3.1$ vs $-7.0$).
 \end{block}
 
@@ -323,7 +372,7 @@ estimate of the fall in female suicide is \textbf{smaller} than the timing-robus
 ## Staggered event study: estimators compared
 
 \begin{center}
-\includegraphics[width=0.64\textwidth]{fig/stag_all.png}
+\includegraphics[width=0.54\textwidth]{fig/stag_all.png}
 \end{center}
 
 - **OLS/TWFE** (open circles) is **biased** as dynamic effects grow; the **modern
@@ -331,7 +380,7 @@ estimate of the fall in female suicide is \textbf{smaller} than the timing-robus
 - Even the **pre-period** coefficients move — each naive lead/lag is **contaminated** by
   other periods' effects (Sun \& Abraham 2021).
 
-# Continuous (dose) treatment
+# Continuous treatment
 
 ## When treatment is a dose, not a switch
 
@@ -373,7 +422,7 @@ If a given dose has \textbf{different effects across units}, the TWFE slope is a
 - Fix: estimate **dose-specific** effects and aggregate transparently
   (Callaway, Goodman-Bacon \& Sant'Anna 2024; de Chaisemartin et al. 2023).
 
-# Applied session and wrap-up
+# Applied
 
 ## DiD in Python (pyfixest)
 
@@ -413,6 +462,6 @@ weighted one.
 
 ## References {.allowframebreaks}
 
-\footnotesize
+\fontsize{6.4}{7.1}\selectfont
 ::: {#refs}
 :::

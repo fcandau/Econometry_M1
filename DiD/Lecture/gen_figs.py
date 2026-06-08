@@ -64,16 +64,4 @@ ax.set_xticks(t); ax.set_ylim(5, 24)
 ax.legend(loc="upper left", fontsize=8.5)
 fig.tight_layout(); fig.savefig("fig/forbidden.png", dpi=150); plt.close(fig)
 
-# ---- Fig 4: John Snow cholera DiD ----
-xs = [0, 1]
-ctrl = [130, 124]          # contaminated (downstream) water: stays high
-treat = [128, 42]          # clean (upstream) water: drops after the reform
-fig, ax = plt.subplots(figsize=(6.2, 3.7))
-ax.plot(xs, treat, "-o", color=BORDEAUX, lw=2.3, label="Clean (upstream) water — treated")
-ax.plot(xs, ctrl, "-o", color=BLUE, lw=2.3, label="Contaminated water — control")
-ax.set_xticks([0, 1]); ax.set_xticklabels(["Before reform", "After reform"])
-ax.set_ylabel("Cholera deaths"); ax.set_xlim(-0.15, 1.15); ax.set_ylim(0, 150)
-ax.legend(loc="center left", fontsize=8.5)
-fig.tight_layout(); fig.savefig("fig/snow.png", dpi=150); plt.close(fig)
-
 print("figures written to fig/")

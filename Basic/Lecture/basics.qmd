@@ -7,7 +7,7 @@ date: today
 format:
   beamer:
     theme: Madrid
-    fonttheme: serif
+    classoption: ["10pt"]
     include-in-header: preamble.tex
     pdf-engine: pdflatex
     slide-level: 2
@@ -34,7 +34,7 @@ $$ y_i = \beta_0 + \beta_1 x_i + \varepsilon_i $$
 
 \begin{center}
 \begin{tikzpicture}
-\begin{axis}[width=10.6cm, height=5.2cm, xlabel={$x$}, ylabel={$y$},
+\begin{axis}[width=9.6cm, height=4.2cm, xlabel={$x$}, ylabel={$y$},
   xmin=0, xmax=9, ymin=0, ymax=6.2, axis lines=left, xtick=\empty, ytick=\empty,
   clip=false]
 % scatter

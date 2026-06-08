@@ -1,12 +1,10 @@
 ---
 title: "Instrumental Variable Approaches"
 author: "F. Candau (UPPA-TREE)"
-institute: "M1 ECO"
-date: today
 format:
   beamer:
     theme: Madrid
-    fonttheme: serif
+    classoption: ["10pt"]
     include-in-header: preamble.tex
     pdf-engine: pdflatex
     slide-level: 2
@@ -273,7 +271,7 @@ If $\beta_0$ is true, $y_i-\beta_0 x_i$ is exogenous, so $z$ has \textbf{no} pow
 - **Lee, McCrary, Moreira & Porter (2022):** $F>10$ is too lenient for honest 5\%
   inference — prefer **AR** (or their $tF$ correction).
 
-# A detour: Generalized Method of Moments
+# GMM
 
 ## What is a "moment"?
 
@@ -377,7 +375,7 @@ results, and diagnostics that can mislead.
 et al. (2020) even show it *is* GMM --- but a **transparent** one whose identifying
 variation we can see and defend.
 
-# The Shift-Share (Bartik) Instrument
+# Shift-share IV
 
 ## Where do good instruments come from?
 
@@ -540,7 +538,7 @@ Both ingredients feed $z_i$; its exogeneity (clean of $U$) can be earned from **
 - **Borusyak et al. (shifts):** the shifts are as-good-as-random $\Rightarrow$ valid *even
   if shares are endogenous*.
 
-# Identification "from the shares": Goldsmith-Pinkham et al. (2020)
+# Shares view
 
 ## The big idea
 
@@ -629,7 +627,7 @@ here relies on **many units** (large $N$).
 - report **over-identification** tests and the spread of the $\hat\beta_k$;
 - use the `bartik_weight` package to compute the weights.
 
-# Identification "from the shifts": Borusyak et al. (2022)
+# Shifts view
 
 ## The big idea
 
@@ -736,7 +734,7 @@ exposure}:
 **Rule of thumb:** the unit of "independent variation" is the **shock**, not the
 region — cluster your thinking (and SEs) accordingly.
 
-# Shares or shifts? A practical guide
+# Shares or shifts?
 
 ## Two paths, one instrument
 
@@ -769,7 +767,7 @@ Ask yourself:
 In practice: report **both** sets of diagnostics, and always use **exposure-robust
 standard errors**.
 
-# Applied session
+# Applied
 
 ## Estimating a Bartik design in Python
 

@@ -7,7 +7,7 @@ date: today
 format:
   beamer:
     theme: Madrid
-    fonttheme: serif
+    classoption: ["10pt"]
     include-in-header: preamble.tex
     pdf-engine: pdflatex
     slide-level: 2
@@ -42,7 +42,7 @@ another can be \textbf{completely spurious}.
 \vfill
 \footnotesize *Textbook, with replication code in R / Python / Stata: Békés and Kézdi (2021).*
 
-# Serial correlation and inference
+# Serial correlation
 
 ## Serially correlated errors
 
@@ -73,7 +73,7 @@ errors correlate across nearby periods, up to a chosen lag window.
 - As a default, report HAC standard errors for any **stationary** time-series regression. A
   non-stationary, wandering series is a different problem (later) that HAC does **not** cure.
 
-# Dynamics: lags and autoregression
+# Dynamics: lags
 
 ## Distributed lags: the effect of $x$ over time
 
@@ -128,7 +128,7 @@ on the right) — a feature you \emph{model}.\\
 - Mixing own past *and* an external $x$ gives the **ADL** (autoregressive distributed-lag)
   model.
 
-# Stationarity and the spurious-regression trap
+# Stationarity
 
 ## Stationarity: what it means, why it matters
 
@@ -190,7 +190,7 @@ If a series is non-stationary, **transform** it:
 - Differencing isolates **short-run** effects (changes, not levels); estimate with **HAC**
   standard errors.
 
-# Applied session and wrap-up
+# Applied
 
 ## Time series in Python (statsmodels)
 

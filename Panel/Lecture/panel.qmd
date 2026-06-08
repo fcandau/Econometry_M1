@@ -6,7 +6,7 @@ date: today
 format:
   beamer:
     theme: Madrid
-    fonttheme: serif
+    classoption: ["10pt"]
     include-in-header: preamble.tex
     pdf-engine: pdflatex
     slide-level: 2
@@ -73,7 +73,7 @@ we flag where it bites.
 $\Cov(x_{it},f_i)=0$ — the very assumption panel data let us **avoid** — so it is rarely
 defensible in modern applied work.
 
-# Estimators that ignore heterogeneity
+# Naive estimators
 
 ## OLS in matrix form: one engine, four datasets
 
@@ -155,7 +155,7 @@ TWFE    & yes & yes & ---\\
 *Between removes $f_t$ only in a **balanced** panel; "Within keeps $f_t$" means in
 demeaned form, $f_t-\bar f$.*
 
-# The within (fixed-effects) estimator
+# Fixed effects
 
 ## The within transformation
 
@@ -271,7 +271,7 @@ $$ \hat\beta_{TWFE}=\frac{\sum_{it}\ddot x_{it}\,\ddot y_{it}}{\sum_{it}\ddot x_
 - Identified only if $\ddot x_{it}$ still **varies** (not collinear with the time
   dummies) — else the denominator collapses.
 
-# Inference: clustered standard errors
+# Clustered standard errors
 
 ## The variance of FE estimators: where inference enters
 
@@ -326,7 +326,7 @@ $$ X'\Omega X=\sum_{g=1}^{G} X_g'\,\Omega_g\,X_g. $$
   *Going further* appendix.
 - Default: with grouped/repeated data, **cluster by the group — and report $G$.**
 
-# Application: temperature and growth
+# Application
 
 ## A long-standing question
 
@@ -420,7 +420,7 @@ $\approx 0$ in rich countries.
 *Country \& year FE; clustered by country. Testing $\beta+\alpha$ needs its **own** SE (a
 linear-combination test), not the stars on $\alpha$.*
 
-# Panel data in Python (pyfixest)
+# Python
 
 ## The toolkit and long format
 
@@ -563,7 +563,7 @@ For a fuller textbook treatment of every method in this chapter, see Wooldridge 
 ::: {#refs}
 :::
 
-# Appendix — Going further: clustered inference
+# Appendix
 
 ## The covariance $\Omega$: what we assume
 
