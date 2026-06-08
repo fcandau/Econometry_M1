@@ -26,3 +26,12 @@ time_series/chap5.tex
 Panel/Lecture/Chap6_en.tex
 Panel/Lecture/cluster.md
 IV_Shift_Share/Lecture/first_page.png
+DiD/Lecture/did_adv.tex
+DiD/Lecture/stag.png
+DiD/Lecture/stag_all.png
+
+# PowerPoint sources (never published)
+*.pptx
+
+# Datasets — large / restricted (e.g. 188 MB RICA parquet); kept local, never published
+*/Data/

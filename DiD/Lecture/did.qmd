@@ -1,0 +1,418 @@
+---
+title: "Difference-in-Differences"
+subtitle: "Design, Dynamics, Continuous and Staggered Treatment"
+author: "F. Candau (UPPA-TREE)"
+institute: "M1 ECO"
+date: today
+format:
+  beamer:
+    theme: Madrid
+    fonttheme: serif
+    include-in-header: preamble.tex
+    pdf-engine: pdflatex
+    slide-level: 2
+    toc: false
+bibliography: references.bib
+nocite: |
+  @bekeskezdi2021, @cardkrueger1994, @goodmanbacon2021, @dcdh2020,
+  @callawaysantanna2021, @sunabraham2021, @borusyak2024, @cgs2024,
+  @roth2022, @roth2023, @stevensonwolfers2006, @gpss2020, @bdm2004,
+  @cunningham2021, @freyaldenhoven2021
+---
+
+## What is difference-in-differences?
+
+A policy hits **some units** at **some date**. We want its causal effect — but treated and
+untreated units differ systematically, so neither a treated-vs-control comparison nor a
+before-vs-after comparison is clean.
+
+\begin{block}{The idea in one line}
+Compare the \textbf{change} in the treated group to the \textbf{change} in a comparison
+group. The second difference nets out fixed level differences \emph{and} common time shocks.
+\end{block}
+
+- Needs **panel** (or repeated cross-sections): the same groups, before and after.
+- **Simple DiD is the TWFE model from the panel chapter** — the only new ingredient is one
+  explanatory variable: a **dummy** for "treated group $\times$ after treatment". We build
+  from there to the modern extensions.
+
+## The origin: John Snow and cholera (1855)
+
+The **first** difference-in-differences. John Snow argued cholera spread through
+**contaminated water**, not air. A water reform left some London districts on **clean
+upstream** water (treated), others on **sewage-contaminated** water (control).
+
+\begin{center}
+\includegraphics[width=0.5\textwidth]{fig/snow.png}
+\end{center}
+
+Cholera deaths **before vs after** $\times$ **treated vs control**: the second difference
+nets out everything common to both and isolates the water effect.
+
+## Roadmap
+
+1. The **canonical $2\times2$** — potential outcomes, parallel trends, the estimator.
+2. **Dynamics** — event studies and two-way fixed effects.
+3. **Staggered** adoption — why naive TWFE breaks, and the modern estimators.
+4. **Continuous** treatment — a "dose", and the same heterogeneity lesson.
+
+\vfill
+\footnotesize *Recent synthesis: Roth, Sant'Anna, Bilinski \& Poe (2023). Textbook
+treatments: Cunningham, \emph{Causal Inference: The Mixtape}; Békés and Kézdi (2021).*
+
+# The canonical $2\times2$ design
+
+## Potential outcomes
+
+Imagine two parallel worlds for each unit $i$:
+
+- $Y_i(1)$ — the outcome it **would have if treated**;
+- $Y_i(0)$ — the outcome it **would have if not treated**.
+
+A **treatment indicator** $D_i\in\{0,1\}$ ($1$ = treated) selects which one we actually see:
+$$ Y_i = D_i\,Y_i(1)+(1-D_i)\,Y_i(0). $$
+
+\begin{alertblock}{The fundamental problem of causal inference}
+For any unit we observe \textbf{only one} potential outcome; the other — the
+\textbf{counterfactual} — is never seen.
+\end{alertblock}
+
+## The treatment effect, and the missing counterfactual
+
+The causal effect for unit $i$ is the gap between its two worlds:
+$$ \tau_i = Y_i(1)-Y_i(0). $$
+A treated unit ($D_i=1$) reveals $Y_i(1)$, but its $Y_i(0)$ — what would have happened
+**without** treatment — is the **missing counterfactual**.
+
+- Individual effects are hopeless, so we target **averages over groups**.
+- Notation: $\E[\,\cdot\mid D_i=1\,]$ reads "the average **among treated** units";
+  $\E[\,\cdot\mid D_i=0\,]$ "the average **among untreated** units" — the bar "$\mid$" means
+  "restricted to".
+
+## Two averages: ATT and ATU
+
+\begin{block}{Average effect on the treated (ATT) and on the untreated (ATU)}
+$$ \text{ATT}=\E[\,Y_i(1)-Y_i(0)\mid D_i=1\,], \qquad
+   \text{ATU}=\E[\,Y_i(1)-Y_i(0)\mid D_i=0\,]. $$
+\end{block}
+
+- **ATT** — the effect for those who **were** treated ("did the policy help its
+  recipients?"). **ATU** — the effect it **would have** had on the untreated ("should we
+  extend it?"). They differ when effects are heterogeneous.
+- **DiD targets the ATT.** The one missing piece is the treated group's untreated
+  counterfactual $\E[\,Y_i(0)\mid D_i=1\,]$ — which **parallel trends** will supply.
+
+## The two-by-two: two differences
+
+Two groups, two periods — we now index outcomes by time, $Y_{it}(d)$. DiD builds the
+treated group's missing counterfactual by assuming it would have moved **like the
+control**:
+
+\begin{center}
+\includegraphics[width=0.6\textwidth]{fig/did_canonical.png}
+\end{center}
+
+$$ \widehat{\text{ATT}}=\underbrace{(\bar y_{T,\text{post}}-\bar y_{T,\text{pre}})}_{\text{treated change}}
+   -\underbrace{(\bar y_{C,\text{post}}-\bar y_{C,\text{pre}})}_{\text{control change}} $$
+
+## Parallel trends: the identifying assumption
+
+\begin{alertblock}{Parallel trends}
+Absent treatment, treated and control would have moved together — equal trends in the
+\textbf{untreated} potential outcome:
+$$ \E[Y_{it}(0)-Y_{i,t-1}(0)\mid D_i=1]=\E[Y_{it}(0)-Y_{i,t-1}(0)\mid D_i=0]. $$
+\end{alertblock}
+
+- It licenses using the control's change as the treated's missing counterfactual change.
+- **Levels** may differ freely (fixed effects absorb them) — only the **trend** must match.
+- **Untestable** (it concerns an unobserved counterfactual): defended with pre-period
+  evidence and economic argument, not proved.
+
+## The regression form
+
+The $2\times2$ DiD is one OLS regression:
+$$ y_{it}=\alpha+\gamma\,D_i+\lambda\,\text{Post}_t+\beta\,(D_i\times\text{Post}_t)+\varepsilon_{it}. $$
+
+- $\gamma$ — the fixed treated-vs-control gap; $\lambda$ — the common time shock.
+- **$\beta$ — the DiD coefficient $=\widehat{\text{ATT}}$** under parallel trends; the
+  interaction $D_i\times\text{Post}_t$ equals $d_{it}$ (one for treated units in the post
+  period, zero otherwise).
+- With a panel this equals two-way fixed effects (next section).
+
+## Example: Card and Krueger (1994)
+
+New Jersey raised its minimum wage (1992); neighbouring Pennsylvania did not. Compare
+fast-food employment across the state line.
+
+\begin{center}
+\small
+\begin{tabular}{lccc}
+\toprule
+FTE employment & Before & After & Change\\
+\midrule
+New Jersey (treated) & 20.44 & 21.03 & $+0.59$\\
+Pennsylvania (control) & 23.33 & 21.17 & $-2.16$\\
+\midrule
+\textbf{Difference-in-differences} & & & $\mathbf{+2.76}$\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+- Employment in New Jersey **rose** relative to Pennsylvania — not just "did not fall" —
+  against the textbook competitive prediction.
+- The cross-border design makes parallel trends plausible: similar labour markets, same
+  macro shocks.
+
+## Assumptions and threats
+
+Beyond parallel trends, a credible DiD needs:
+
+- **No anticipation** — units don't react before treatment, or the pre-period is
+  contaminated.
+- **SUTVA** (stable unit treatment value) — two parts: (i) **no interference**, one unit's
+  treatment does not change another's outcome (no spillovers across the border); (ii) **one
+  version** of treatment, so "treated" means the same thing for every unit.
+- **Stable composition** — no differential entry/exit (attrition) changing who is in each
+  group.
+- **Inference** — the treatment dummy is highly **serially correlated**, so naive standard
+  errors badly understate uncertainty (the Bertrand–Duflo–Mullainathan 2004 problem from
+  the panel chapter) $\Rightarrow$ **cluster** by unit/group.
+
+# Dynamics: event studies and two-way fixed effects
+
+## From the $2\times2$ to panel TWFE
+
+With many units and periods, write the DiD as **two-way fixed effects**:
+$$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}, \qquad d_{it}=D_i\cdot\text{Post}_t. $$
+
+- $f_i$ absorbs fixed unit differences, $f_t$ the common time shocks (recall the panel
+  chapter). With **common timing** (all treated units adopt at the same date),
+  $\beta=\widehat{\text{ATT}}$ — an equality that **breaks under staggered timing** (the
+  staggered section).
+- The static $\beta$ hides two questions: do effects **grow over time**? do **pre-trends**
+  hold? $\to$ the event study.
+
+## The event-study specification
+
+Replace the single switch by a full set of **leads and lags** around each unit's treatment
+date:
+$$ y_{it}=f_i+f_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}\{t-t^*_i=k\}+u_{it}. $$
+
+- $k=t-t^*_i$ is **event time** ($t^*_i$ = unit $i$'s treatment date, called $g_i$ in the
+  staggered section); $k=-1$ is the **omitted baseline**, so each $\beta_k$ is relative to
+  the period just before treatment.
+- $\beta_k$ for $k<0$ are **pre-trends**; for $k\ge0$ they are **dynamic treatment
+  effects**. (Bin the extreme $k$ to avoid under-identified endpoints.)
+
+## Reading the event study
+
+\begin{center}
+\includegraphics[width=0.82\textwidth]{fig/event_study.png}
+\end{center}
+
+- **Flat, near-zero** coefficients before $0$ are consistent with parallel trends; the
+  post coefficients trace the effect's **dynamics**.
+- A sloping pre-period ($\beta_k\neq0$ for $k<0$) is a red flag for the design.
+
+## A caution on pre-trends
+
+\begin{block}{Passing a pre-trend test is reassuring, not decisive}
+Tests of $\beta_k=0$ for $k<0$ often have \textbf{low power} — they miss real violations —
+and conditioning on "passing" can itself distort the estimate (Roth, 2022).
+\end{block}
+
+- Treat them as **evidence**, alongside an economic case for why the trends should align.
+- **Plot** the coefficients; never lean on a single $p$-value (on event-study design and
+  visualization, see Freyaldenhoven et al. 2021).
+
+# Staggered adoption
+
+## Units adopt at different times
+
+Most policies roll out **gradually**: unit $i$ is first treated at date $g_i$.
+
+- Example — Emission Control Areas: Baltic (2006), North Sea (2007), North America
+  (2012), Caribbean (2014).
+- The natural move is the same TWFE regression, with $d_{it}=\mathbf{1}\{t\ge g_i\}$:
+  $$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}. $$
+- **This is where it breaks.**
+
+## The TWFE trap: forbidden comparisons
+
+\begin{center}
+\includegraphics[width=0.72\textwidth]{fig/forbidden.png}
+\end{center}
+
+TWFE implicitly uses **already-treated** units as controls for **later-treated** ones — a
+**forbidden comparison**. The already-treated "control" is still responding to its own
+treatment, so its change is **not** a clean counterfactual.
+
+## Negative weights and sign reversal
+
+\begin{alertblock}{TWFE under heterogeneity (Goodman-Bacon 2021; de Chaisemartin \& D'Haultfœuille 2020)}
+The TWFE coefficient is a weighted average of all possible $2\times2$ DiDs — and some
+weights are \textbf{negative}. With heterogeneous effects, $\beta$ can even take the
+\textbf{wrong sign} when every true effect is positive.
+\end{alertblock}
+
+Goodman-Bacon (2021) makes this exact:
+$$ \hat\beta_{\text{TWFE}}=\sum_k w_k\,\widehat{\text{DiD}}_k,\qquad
+   \textstyle\sum_k w_k=1,\ \ \text{some } w_k<0, $$
+the negative $w_k$ sitting on the **forbidden** (already-treated-as-control) comparisons.
+
+\footnotesize *A recurring theme: like the complier-weighting of \textbf{LATE} and the
+\textbf{Rotemberg weights} of shift-share (IV chapter), a regression coefficient is a
+weighted average of heterogeneous effects — here some weights turn negative, which is what
+breaks it.*
+
+## The building block: group-time effects
+
+Modern estimators target the **group-time ATT** directly — the effect at time $t$ for the
+cohort first treated at $g$:
+$$ \text{ATT}(g,t)=\E\!\left[\,Y_{it}(1)-Y_{it}(0)\ \middle|\ g_i=g\,\right],\qquad t\ge g. $$
+
+- The missing $Y_{it}(0)$ is estimated from **clean** controls — never- or not-yet-treated
+  units (no already-treated comparisons).
+- **Aggregate** to one overall number (or an event study) with transparent,
+  **non-negative** weights:
+  $$ \text{ATT}^{o}=\textstyle\sum_{g,t} w(g,t)\,\text{ATT}(g,t),\qquad w(g,t)\ge 0, $$
+  in contrast to the TWFE decomposition above, where some weights were \emph{negative}.
+
+## The modern estimators
+
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{4.7cm} >{\raggedright\arraybackslash}p{5.7cm}@{}}
+\toprule
+Estimator & Clean comparison group\\
+\midrule
+Callaway \& Sant'Anna (2021) & never-treated \emph{or} not-yet-treated\\
+Sun \& Abraham (2021) & interaction-weighted; never-treated (or last-treated) cohort\\
+Borusyak et al. (2024) & impute $Y(0)$ from not-yet-treated (efficient)\\
+de Chaisemartin \& D'Haultfœuille (2020) & consecutive periods; treatment can switch on \emph{and off}\\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\vspace{2pt}
+All replace the forbidden comparison with clean controls; they differ in the control set
+and in efficiency.
+
+## What you must compute
+
+These estimators need the **timing** structure in the data:
+
+- the **cohort** $g_i$ — each unit's first treatment period (treated at $t=6$ $\Rightarrow$
+  $g_i=6$ on \emph{all} of its rows);
+- **event time** $k=t-g_i$;
+- a **never- / not-yet-treated** indicator, to define clean controls.
+
+Software builds the comparisons for you — but you must supply $g_i$.
+
+## Example: unilateral divorce and suicide
+
+\begin{block}{Unilateral divorce and female suicide (Goodman-Bacon 2021)}
+US states adopted unilateral divorce at staggered dates (California 1969 \dots; a few
+never). Re-analysing Stevenson \& Wolfers (2006), Goodman-Bacon shows the \textbf{TWFE}
+estimate of the fall in female suicide is \textbf{smaller} than the timing-robust one
+($-3.1$ vs $-7.0$).
+\end{block}
+
+- The already-treated comparisons **attenuate** the effect toward zero — here the bias
+  shrinks the estimate rather than flipping its sign (both are possible).
+
+## Staggered event study: estimators compared
+
+\begin{center}
+\includegraphics[width=0.64\textwidth]{fig/stag_all.png}
+\end{center}
+
+- **OLS/TWFE** (open circles) is **biased** as dynamic effects grow; the **modern
+  estimators** track the truth.
+- Even the **pre-period** coefficients move — each naive lead/lag is **contaminated** by
+  other periods' effects (Sun \& Abraham 2021).
+
+# Continuous (dose) treatment
+
+## When treatment is a dose, not a switch
+
+Often treatment has **intensity**, not just on/off:
+
+- pollution exposure that **decays with distance** from the source;
+- spending levels, tax rates, minimum-wage **levels**, regulatory **stringency**.
+
+We then care about the effect of a **change in intensity** — not merely of treatment's
+existence.
+
+## The continuous DiD specification
+
+With a continuous dose $D_i$ switched on after the policy:
+$$ y_{it}=f_i+f_t+\beta\,(D_i\times\text{Post}_t)+u_{it}. $$
+
+- $\beta$ is a **dose-response slope**; the target is the **dose-specific** effect
+  $\text{ATT}(d\mid d)=\E[Y_{it}(d)-Y_{it}(0)\mid D_i=d]$.
+- Identification needs a **stronger** parallel-trends assumption: units at \emph{every}
+  dose level would have trended alike absent treatment.
+
+\begin{block}{Callback — this \emph{is} the shift-share design (IV chapter)}
+Exposure is a continuous dose; the Goldsmith-Pinkham et al. (2020) "shares view" assumption
+\textbf{is} parallel trends, and the estimator pools \textbf{many DiD comparisons — one per
+share}.
+\end{block}
+
+## The catch: the same heterogeneity problem
+
+\begin{alertblock}{Continuous TWFE is fragile (Callaway, Goodman-Bacon \& Sant'Anna 2024)}
+If a given dose has \textbf{different effects across units}, the TWFE slope is a
+\textbf{non-convex weighted average} that mixes the dose-response with how units
+\textbf{select} into doses — it need not equal any dose effect, even under parallel trends.
+\end{alertblock}
+
+- This is the **staggered problem again** — heterogeneous effects $+$ implicit comparisons
+  — now across **dose levels** rather than treatment **dates** (the dose analogue of
+  shift-share's **Rotemberg-weight** diagnostics).
+- Fix: estimate **dose-specific** effects and aggregate transparently
+  (Callaway, Goodman-Bacon \& Sant'Anna 2024; de Chaisemartin et al. 2023).
+
+# Applied session and wrap-up
+
+## DiD in Python (pyfixest)
+
+```{python}
+#| eval: false
+#| echo: true
+import pyfixest as pf
+# 1. Static TWFE (single date): beta = ATT
+m = pf.feols("y ~ treatpost | id + year",
+             df, vcov={"CRV1": "id"})
+# 2. Event study: leads/lags, baseline k = -1
+es = pf.feols("y ~ i(k, ref=-1) | id + year",
+              df, vcov={"CRV1": "id"})
+pf.iplot(es)             # plot beta_k with CIs
+# 3. Staggered: do NOT trust plain TWFE -> use
+#    pf.did2s (Gardner) or Callaway-Sant'Anna.
+```
+
+- `i(k, ref=-1)` builds the event-study leads/lags; `iplot` draws them.
+- For **staggered** designs, always prefer a heterogeneity-robust estimator over raw TWFE.
+
+## Takeaways
+
+- DiD turns **two differences** into a causal effect; identification is **parallel
+  trends** — defended, not proved.
+- **Event studies** show dynamics and probe pre-trends (low power $\Rightarrow$ argue,
+  don't just test).
+- **Continuous** and **staggered** designs break naive TWFE under **heterogeneous
+  effects**: negative weights, forbidden comparisons, possible sign reversal.
+- Use **group-time** estimators with clean controls (Callaway \& Sant'Anna; Sun \&
+  Abraham; Borusyak et al.; de Chaisemartin \& D'Haultfœuille).
+
+\begin{block}{Next}
+\textbf{Synthetic control} — when no \emph{single} clean control group exists, build a
+weighted one.
+\end{block}
+
+## References {.allowframebreaks}
+
+\footnotesize
+::: {#refs}
+:::
