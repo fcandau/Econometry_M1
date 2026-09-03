@@ -23,3 +23,11 @@
 
 # 4) ...except this stray non-chapter PDF
 Basic/Lecture/02_randomization.pdf
+
+# 5) TD folders stay local: the .qmd embeds the corrigé, and the TD PDFs are handed
+#    to students via e-learn, not via the public Pages site. (Publishing a TD subject
+#    is a deliberate, per-file decision — un-ignore it explicitly if you want that.)
+**/TD/**
+
+# 6) archived material (retired chapters, one-off migration scripts) never goes public
+_archive/**

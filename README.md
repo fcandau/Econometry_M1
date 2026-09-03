@@ -3,17 +3,17 @@
 Lecture slides (Beamer PDF) and [Quarto](https://quarto.org) source for the first-year
 Master (M1) Econometrics course, **F. Candau** (E2S-UPPA / UPPA-TREE).
 
-The course runs in sequence: **OLS → Time Series → Panel → Instrumental Variables /
-Shift-Share.**
+The course runs in sequence: **OLS → Panel → Instrumental Variables / Shift-Share →
+Difference-in-Differences.**
 
 ## Lectures
 
 | # | Lecture | Slides | Source |
 |---|---------|--------|--------|
 | 1 | The Linear Model — OLS, inference, diagnostics | [PDF](Basic/Lecture/basics.pdf) | [.qmd](Basic/Lecture/basics.qmd) |
-| 2 | Time Series — persistence, trends, spurious regression | [PDF](time_series/Lecture/timeseries.pdf) | [.qmd](time_series/Lecture/timeseries.qmd) |
-| 3 | Panel Data | [PDF](Panel/Lecture/panel.pdf) | [.qmd](Panel/Lecture/panel.qmd) |
-| 4 | Instrumental Variables & Shift-Share | [PDF](IV_Shift_Share/Lecture/IV_ShiftShare.pdf) | [.qmd](IV_Shift_Share/Lecture/IV_ShiftShare.qmd) |
+| 2 | Panel Data | [PDF](Panel/Lecture/panel.pdf) | [.qmd](Panel/Lecture/panel.qmd) |
+| 3 | Instrumental Variables & Shift-Share | [PDF](IV_Shift_Share/Lecture/IV_ShiftShare.pdf) | [.qmd](IV_Shift_Share/Lecture/IV_ShiftShare.qmd) |
+| 4 | Difference-in-Differences | [PDF](DiD/Lecture/did.pdf) | [.qmd](DiD/Lecture/did.qmd) |
 
 ## Reproducing the slides
 
