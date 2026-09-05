@@ -22,8 +22,8 @@ ax.plot(x, cf, "--", color=BORDEAUX, lw=1.6,
 ax.annotate("", xy=(1, 10), xytext=(1, 8),
             arrowprops=dict(arrowstyle="<->", color="black", lw=1.4))
 ax.text(1.04, 9.0, "ATT", va="center", fontsize=11)
-ax.axvline(0.5, color="black", lw=0.6, ls=":")
-ax.text(0.5, 2.4, "treatment", ha="center", fontsize=8, color="black")
+ax.axvline(0.05, color="black", lw=0.6, ls=":")   # just after "Before"
+ax.text(0.05, 2.4, "treatment", ha="left", fontsize=8, color="black")
 ax.set_xticks([0, 1]); ax.set_xticklabels(["Before", "After"])
 ax.set_ylabel("Outcome  $y$"); ax.set_xlim(-0.15, 1.35); ax.set_ylim(2, 12)
 ax.legend(loc="upper left", fontsize=8.5)

@@ -24,7 +24,7 @@ identifies a cause-and-effect relationship. It turns on one question:
 *what would have happened had the shock or policy never occurred?* From that
 **counterfactual** we recover the effect of the shock or the policy.
 
-It is the very stuff of science fiction — stories built on an alternative history or a
+Science fiction is built on the same question — stories of an alternative history or a
 parallel world: *The Man in the High Castle* (P. K. Dick), *Back to the Future*,
 *Doctor Strange* (Marvel), and many more.
 
@@ -73,17 +73,6 @@ difference-in-differences.
 \end{column}
 \end{columns}
 
-## The difference-in-differences logic
-
-The **treatment** is that some neighbourhoods now receive **uncontaminated water**. We look
-at the **before vs after** for treated and untreated neighbourhoods (the **first
-difference**), then take the difference **between the two groups** (the **second
-difference**). Any factor that hits **both** groups at once is thereby **eliminated**.
-
-\begin{center}
-\includegraphics[width=0.68\textwidth]{fig/did.png}
-\end{center}
-
 ## Roadmap
 
 1. The **canonical $2\times2$** — potential outcomes, parallel trends, the estimator.
@@ -94,49 +83,40 @@ difference**). Any factor that hits **both** groups at once is thereby **elimina
 
 \vfill
 \footnotesize *Recent synthesis: Roth, Sant'Anna, Bilinski \& Poe (2023). Textbook
-treatments: Cunningham, \emph{Causal Inference: The Mixtape}; Békés and Kézdi (2021).*
+treatment: Cunningham, \emph{Causal Inference: The Mixtape}.*
 
 # The $2\times2$
 
-## Potential outcomes
+## Potential outcomes and the missing counterfactual
 
-Imagine two parallel worlds for each unit $i$:
-
-- $Y_i(1)$ — the outcome it **would have if treated**;
-- $Y_i(0)$ — the outcome it **would have if not treated**.
-
-A **treatment indicator** $D_i\in\{0,1\}$ ($1$ = treated) selects which one we actually see:
-$$ Y_i = D_i\,Y_i(1)+(1-D_i)\,Y_i(0). $$
+Each unit $i$ has two potential outcomes: $Y_i(1)$ **if treated**, $Y_i(0)$ **if not**.
+The treatment indicator $D_i\in\{0,1\}$ selects the one we observe, and the causal effect
+is the gap between the two:
+$$ Y_i = D_i\,Y_i(1)+(1-D_i)\,Y_i(0), \qquad \tau_i = Y_i(1)-Y_i(0). $$
 
 \begin{alertblock}{The fundamental problem of causal inference}
-For any unit we observe \textbf{only one} potential outcome; the other — the
-\textbf{counterfactual} — is never seen.
+For any unit we observe \textbf{only one} potential outcome. A treated unit reveals
+$Y_i(1)$; its $Y_i(0)$, what would have happened \textbf{without} treatment, is the
+\textbf{missing counterfactual}.
 \end{alertblock}
 
-## The treatment effect, and the missing counterfactual
+- Individual effects $\tau_i$ are not identified; the targets are **averages over
+  groups**.
+- Notation: $\E[\,\cdot\mid D_i=1\,]$ is the average **among treated** units,
+  $\E[\,\cdot\mid D_i=0\,]$ the average **among untreated** units.
 
-The causal effect for unit $i$ is the gap between its two worlds:
-$$ \tau_i = Y_i(1)-Y_i(0). $$
-A treated unit ($D_i=1$) reveals $Y_i(1)$, but its $Y_i(0)$ — what would have happened
-**without** treatment — is the **missing counterfactual**.
+## The target: the average effect on the treated
 
-- Individual effects are hopeless, so we target **averages over groups**.
-- Notation: $\E[\,\cdot\mid D_i=1\,]$ reads "the average **among treated** units";
-  $\E[\,\cdot\mid D_i=0\,]$ "the average **among untreated** units" — the bar "$\mid$" means
-  "restricted to".
-
-## Two averages: ATT and ATU
-
-\begin{block}{Average effect on the treated (ATT) and on the untreated (ATU)}
-$$ \text{ATT}=\E[\,Y_i(1)-Y_i(0)\mid D_i=1\,], \qquad
-   \text{ATU}=\E[\,Y_i(1)-Y_i(0)\mid D_i=0\,]. $$
+\begin{block}{Average treatment effect on the treated (ATT)}
+$$ \text{ATT}=\E[\,Y_i(1)-Y_i(0)\mid D_i=1\,]. $$
 \end{block}
 
-- **ATT** — the effect for those who **were** treated ("did the policy help its
-  recipients?"). **ATU** — the effect it **would have** had on the untreated ("should we
-  extend it?"). They differ when effects are heterogeneous.
-- **DiD targets the ATT.** The one missing piece is the treated group's untreated
-  counterfactual $\E[\,Y_i(0)\mid D_i=1\,]$ — which **parallel trends** will supply.
+- The effect for the units that **were** treated: did the policy change the outcome of
+  its recipients?
+- The average effect on the **untreated**, $\E[\,Y_i(1)-Y_i(0)\mid D_i=0\,]$, is a
+  different parameter when effects are heterogeneous; DiD does not identify it.
+- **DiD targets the ATT.** The missing piece is the treated group's untreated
+  counterfactual $\E[\,Y_i(0)\mid D_i=1\,]$, which **parallel trends** will supply.
 
 ## The two-by-two: two differences
 
@@ -162,10 +142,12 @@ the \textbf{untreated} outcome:
 $$ \E[\Delta Y_i(0)\mid D_i=1]=\E[\Delta Y_i(0)\mid D_i=0]. $$
 \end{alertblock}
 \begin{itemize}
-\item \textbf{Levels} may differ freely (fixed effects absorb them) --- only the
-\textbf{trend} must match.
-\item \textbf{Untestable} (it concerns an unobserved counterfactual): defend it with
-pre-period evidence and economic argument --- you cannot prove it.
+\item \textbf{Levels} may differ (fixed effects absorb them); only the \textbf{trend}
+must match.
+\item \textbf{Untestable} (an unobserved counterfactual): defended with pre-period
+evidence and economic argument, never proved.
+\item \textbf{No anticipation}, the companion assumption: treated units do not respond
+before the date, so their pre-period outcome is $Y_i(0)$.
 \end{itemize}
 \end{column}
 \begin{column}{0.34\textwidth}
@@ -180,10 +162,11 @@ The $2\times2$ DiD is one OLS regression:
 $$ y_{it}=\alpha+\gamma\,D_i+\lambda\,\text{Post}_t+\beta\,(D_i\times\text{Post}_t)+\varepsilon_{it}. $$
 
 - $\gamma$ — the fixed treated-vs-control gap; $\lambda$ — the common time shock.
-- **$\beta$ — the DiD coefficient $=\widehat{\text{ATT}}$** under parallel trends; the
+- **$\beta$ — the DiD coefficient, equal to the ATT** under parallel trends; the
   interaction $D_i\times\text{Post}_t$ equals $d_{it}$ (one for treated units in the post
   period, zero otherwise).
-- With a panel this equals two-way fixed effects (the dynamics section).
+- In a **balanced** panel this equals two-way fixed effects (the dynamics section); with
+  entry and exit, the two estimates differ.
 
 ## Example: Card and Krueger (1994)
 
@@ -209,42 +192,28 @@ Pennsylvania (control) & 23.33 & 21.17 & $-2.16$\\
 - The cross-border design makes parallel trends plausible: similar labour markets, same
   macro shocks — the control was chosen for that reason (next section).
 
-## Assumptions and threats
-
-Beyond parallel trends, a credible DiD needs:
-
-- **No anticipation** — units don't react before treatment, or the pre-period is
-  contaminated (an announced reform: watch the years before the date).
-- **SUTVA** (stable unit treatment value) — (i) **no interference**: one unit's treatment
-  does not change another's outcome (a control that sells on the same market as the
-  treated is "a little treated"); (ii) **one version** of treatment.
-- **Stable composition** — no differential entry/exit changing who is in each group
-  (exit can itself be an effect of the policy).
-- **No control-specific shock** in the window — a reform that happens to hit only the
-  control in the same year is attributed, with the wrong sign, to the treatment.
-- **Inference** — the treatment dummy is highly **serially correlated**; naive standard
-  errors understate uncertainty (last section).
-
 # Comparison group
 
-## A control is chosen, not found
+## Choosing the comparison group
 
-Parallel trends is a statement about **shocks**: absent the policy, both groups would have
-been hit by the same ones. Pick the comparison group on economics, before estimating:
+Parallel trends is an assumption on the **shocks**: absent the policy, the treated and the
+comparison group would have received the same ones. The choice of the comparison group is
+part of the identification strategy and is made on economic grounds before estimation.
 
 \small
-1. **Same shocks.** Same industry, markets, geography — so that $f_t$ is really common.
-   A control from another market has its own price cycle.
-2. **Untouched by the treatment.** Trace the **channel** of the policy (a price, a
-   quantity, a payment) and check that the control's channel did *not* move.
-3. **No shock of its own** in the window (a reform or crisis specific to the control).
-4. **Verifiable pieces.** Levels may differ; show the channel (item 2) and the pre-period
-   trends (the dynamics section).
+1. **Common shocks.** Same industry, markets and geography, so that the time effect
+   $f_t$ is common to both groups. A group on another market follows its own price cycle.
+2. **Not exposed to the policy** (SUTVA: one unit's treatment does not change another
+   unit's outcome). Identify the channel of the policy (a price, a quantity, a payment)
+   and verify that it did not move for the comparison group.
+3. **No shock specific to the comparison group** during the estimation window.
+4. **Observable implications.** The channel (item 2) and the pre-treatment trends (the
+   dynamics section) can be documented; the counterfactual cannot.
 
 \normalsize
-\begin{block}{The rule}
-Do not run the regression to \emph{discover} whether the control is good. Argue it first;
-the regression then confirms or refutes an argument already made.
+\begin{block}{Order of the argument}
+The comparison group is justified first, on items 1--3. Estimation then tests the
+observable implications of that justification; it does not replace it.
 \end{block}
 
 ## Refine the comparison: region $\times$ year effects
@@ -256,9 +225,9 @@ $$ y_{it}=f_i+f_{r(i),t}+\beta\,d_{it}+u_{it}. $$
 - Now treated and control units are compared **within the same region in the same year**:
   a drought, a regional aid scheme, a local processor's collapse all cancel out.
 - The comparison only uses regions where **both** groups are present — a smaller sample,
-  larger standard errors: **the price of a more demanding comparison.**
-- Same logic as clustering in the panel chapter: think about *where* the shocks live, and
-  put a fixed effect there.
+  larger standard errors: the cost of a comparison restricted to neighbours.
+- A fixed effect **removes** a shock from the comparison; clustering (panel chapter) only
+  accounts for it in the standard error. Put the fixed effect where the shocks are.
 
 # Dynamics
 
@@ -269,12 +238,13 @@ $$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}, \qquad d_{it}=D_i\cdot\text{Post}_t. $$
 
 - $f_i$ absorbs fixed unit differences, $f_t$ the common time shocks (recall the panel
   chapter). With **common timing** (all treated units adopt at the same date),
-  $\beta=\widehat{\text{ATT}}$ — an equality that **breaks under staggered timing** (next
+  $\beta=\text{ATT}$ — an equality that **breaks under staggered timing** (next
   chapter).
-- The static $\beta$ hides two questions: do effects **grow or fade over time**? do
-  **pre-trends** hold? $\to$ the event study.
-- A static $\beta$ over a long post period is an **average over a dynamic path** — lengthen
-  the window and it changes, because it mixes crisis years and recovery years.
+- The static $\beta$ is an **average over a dynamic path**: over a long post period it
+  mixes the first years and the later ones, and it changes with the window. It also says
+  nothing about the **pre-trends**. The event study shows both.
+- The **estimation window** is fixed before estimation. Years excluded for a documented
+  shock are named in advance, never after seeing the coefficients.
 
 ## The event-study specification
 
@@ -285,7 +255,7 @@ $$ y_{it}=f_i+f_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}\{t-t^*_i=k\}\,D_i+u_{it}. $
 - $k=t-t^*_i$ is **event time** ($t^*_i$ = the treatment date); $k=-1$ is the **omitted
   baseline**, so each $\beta_k$ is relative to the period just before treatment.
 - $\beta_k$ for $k<0$ are **pre-trends**; for $k\ge0$ they are **dynamic treatment
-  effects**. (Bin the extreme $k$ to avoid under-identified endpoints.)
+  effects**.
 - With one treatment date this is simply one coefficient per **calendar year** on the
   treated dummy.
 
@@ -297,7 +267,8 @@ $$ y_{it}=f_i+f_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}\{t-t^*_i=k\}\,D_i+u_{it}. $
 
 - **Flat, near-zero** coefficients before $0$ are consistent with parallel trends; the
   post coefficients trace the effect's **dynamics**.
-- A sloping pre-period ($\beta_k\neq0$ for $k<0$) is a red flag for the design.
+- A sloping pre-period ($\beta_k\neq0$ for $k<0$) is a failure of parallel trends before
+  treatment: the comparison group has to be revised.
 
 ## A caution on pre-trends
 
@@ -307,44 +278,46 @@ and conditioning on "passing" can itself distort the estimate (Roth, 2022).
 \end{block}
 
 - Treat them as **evidence**, alongside an economic case for why the trends should align.
-- **Plot** the coefficients; never lean on a single $p$-value (on event-study design and
+- **Plot** the coefficients; never rely on a single $p$-value (on event-study design and
   visualization, see Freyaldenhoven et al. 2021).
-- The reverse is also true: a pre-period that **fails** is not a nuisance to be argued away.
-  It is information about the design — the next section.
 
 # Diagnostics
 
-## Bounding the damage: Rambachan and Roth (2023)
+## Bounds on the violation: Rambachan and Roth (2023)
 
 When the pre-period is *imperfect* rather than broken, ask how large a post-period
 violation the effect could survive.
 
 \begin{block}{The idea}
-Let $M$ be the largest deviation from parallel trends observed in the pre-period. Allow the
-post-period violation to be \textbf{at most as large as $M$} (or to change smoothly), and
-compute the set of ATTs consistent with the data under that restriction.
+Let $M$ be the largest period-to-period deviation from parallel trends in the pre-period.
+For a multiplier $\bar M$ chosen by the analyst, allow the post-period deviation to be
+\textbf{at most $\bar M\times M$}, and compute the confidence interval that remains valid
+under that restriction.
 \end{block}
 
-- If the effect stays away from zero for every violation up to $M$, it is robust to
-  "trends as bad as anything seen before"; if not, say so.
-- A failed pre-period is not to be argued away: the answer is a **better counterfactual**,
-  not a better standard error. Bounds tell you how far you are from needing one.
-- Implemented as `HonestDiD` (R, Stata). The right tool for the honest sentence "our result
-  survives violations up to $M$".
+- $\bar M=1$ allows a violation as large as the worst pre-period year. Report the interval
+  for $\bar M=0.5,\,1,\,1.5,\,2$; the first $\bar M$ whose interval contains zero measures
+  the margin.
+- Bounds measure how far the estimate is from needing a **better comparison group**; a
+  failed pre-period calls for one, not for a different standard error.
+- Implemented as `HonestDiD` (R, Stata). It gives the sentence to report: the result
+  survives violations up to $\bar M$ times the pre-period ones.
 
 ## Placebo tests
 
 A design that identifies an effect where there is one should find **nothing** where there
 is none:
 
-- **Placebo in time** — pretend the policy happened at an earlier date, inside the
-  pre-period, and estimate the $2\times2$ there.
+- **Placebo in time** — apply the design to a date at which nothing happened, inside the
+  pre-period.
 - **Placebo group** — apply the design to a group that could not have been affected.
 - **Placebo outcome** — an outcome the policy cannot reach through the claimed channel.
 
 \vspace{4pt}
-A placebo that "finds" an effect is a diagnosis: some other shock separates the groups at
-that date. It does not condemn the design, it bounds its reach — and it belongs in the paper.
+A placebo in time is a $2\times2$ on pre-treatment years, a linear combination of the
+pre-period coefficients: a rejection is a failure of parallel trends at that date. Placebo
+groups and outcomes test the channel: a rejection means some other shock separates the
+groups. Both belong in the paper.
 
 ## Composition: the balanced-panel check
 
@@ -355,8 +328,13 @@ farms exit, workers move).
   the losers, the effect appears to fade faster than it does for any given unit.
 - **Check:** re-estimate on units present in every year of a window around the policy
   (a *balanced* panel).
-- Report **both**: they bracket the truth — the full panel understates persistence, the
-  balanced panel ignores the exits.
+- Report **both**. They answer different questions: the balanced panel gives the effect
+  on the units that stay, the full panel the effect on the observed population,
+  composition included. The direction of the gap depends on who leaves.
+
+\begin{center}
+\includegraphics[width=0.30\textwidth]{fig/survivorship_plane.png}
+\end{center}
 
 # Inference
 
@@ -377,54 +355,124 @@ reject a \emph{true} null of no effect up to \textbf{45\,\%} of the time at the 
 ## One treated group
 
 Many DiDs have **one** treated group — a sector, a state, a country. Then "cluster at the
-level of treatment assignment" means $G=2$, and the cluster-robust estimator does not exist.
+level of treatment assignment" means $G=2$: the cluster-robust estimator has one degree
+of freedom and is uninformative. Clustering by unit ignores the shock common to the whole
+treated group in a given year (a price cycle, an embargo), which is a **single draw**.
 
 - **What you can do:** cluster by unit and report a coarser level as robustness; run
   **placebo-in-time** and **permutation** tests (assign the treatment to each control
   group in turn and see where the true estimate falls in that distribution);
-  Conley--Taber (2011) and Ferman--Pinto (2019) inference for few treated groups.
+  Conley--Taber (2011) estimate the distribution of the group-year shock from the control
+  groups, Ferman--Pinto (2019) correct for unequal group sizes.
 - **What you must say:** with one treated group, the uncertainty that matters is whether the
   comparison is right, not the sampling error of a mean. Inference rests on the **design**
   — the control, the window, the placebos — as much as on the standard error.
 
 # Applied
 
-## DiD in Python (pyfixest)
+## Build the treatment variables
+
+Six lines create the treatment variables, the region $\times$ year cell, the sample and
+the clustering.
 
 ```{python}
 #| eval: false
 #| echo: true
-import pyfixest as pf
-cl = {"CRV1": "id"}
-# 1. Static 2x2 / TWFE (single date): beta = ATT
-m  = pf.feols("y ~ d | id + year", df, vcov=cl)
-# 2. Region x year effects: compare neighbours
-m2 = pf.feols("y ~ d | id + region^year", df, vcov=cl)
-# 3. Event study: leads/lags, baseline k = -1
-es = pf.feols("y ~ i(k, ref=-1) | id + region^year",
-              df, vcov=cl)
-pf.iplot(es)                       # plot beta_k with CIs
-# 4. Placebo: fake date inside the pre-period
-pl = pf.feols("y ~ d_fake | id + region^year", df_pre, vcov=cl)
+df["lait"] = (df["groupe"] == "lait").astype(int)            # 1
+df["post"] = (df["annee"] >= 2015).astype(int)               # 2
+df["d"]    = df["lait"] * df["post"]                         # 3
+df["reg_an"] = df["region"].astype(str) + "_" \
+             + df["annee"].astype(str)                       # 4
+base = df[df["groupe"].isin(["lait", "caprins"])]            # 5
+cl = {"CRV1": "id"}                                          # 6
 ```
 
-- `region^year` builds the region $\times$ year effects; `i(k, ref=-1)` the leads and
-  lags around the treatment date.
+\small
 
-## Takeaways
+- **1**, **2** — $D_i$, 1 for a dairy farm, and $\text{Post}_t$, 1 from 2015 on;
+  `.astype(int)` turns `True`/`False` into 1/0.
+- **3** — $d_{it} = D_i \times \text{Post}_t$: the regressor whose coefficient is the ATT.
+- **4** — a text label such as `"22_2015"`, one per region and year; its fixed effect
+  compares dairy and goat farms of the **same region the same year**.
+- **5** — keeps the treated group and its control; `.isin` tests membership in a list.
+- **6** — standard errors clustered by farm, passed to every regression as `vcov=cl`.
 
-- DiD turns **two differences** into a causal effect; identification is **parallel
-  trends** — defended, not proved.
-- The comparison group is **chosen on economics**: same shocks, untouched channel, no shock
-  of its own.
-- **Event studies** show dynamics and probe pre-trends; **bounds** (Rambachan--Roth),
-  **placebos** and the **balanced panel** quantify what survives.
-- Cluster by unit; with one treated group, inference rests on the design.
+## The $2\times2$: by hand, then in regression
 
-\begin{block}{Next}
-\textbf{Staggered adoption} --- when units are treated at different dates, the TWFE
-regression compares already-treated to later-treated units and can even flip the sign.
-\end{block}
+Five lines reproduce the table of four means and three regression versions, equal only
+in a balanced panel.
+
+```{python}
+#| eval: false
+#| echo: true
+w = base[base["annee"].between(2012, 2016)]                   # 1
+tab = w.groupby(["groupe","post"])["res_uta"].mean().unstack() # 2
+m1 = pf.feols("res_uta ~ lait + post + lait:post", w, vcov=cl) # 3
+m2 = pf.feols("res_uta ~ d | id + annee", w, vcov=cl)          # 4
+m3 = pf.feols("res_uta ~ d | id + reg_an", w, vcov=cl)         # 5
+```
+
+\small
+
+- **1** — three years before, two years after.
+- **2** — the mean outcome by group and period, `unstack()` putting the two periods
+  side by side: the $2\times2$ table. The DiD is the difference of the two row changes.
+- **3** — the same number as a regression: `lait:post` is the interaction, its
+  coefficient is $\beta$; `lait` and `post` alone are $\gamma$ and $\lambda$.
+- **4** — with farm and year fixed effects: each farm compared to itself.
+- **5** — with region $\times$ year effects instead of year effects: neighbours only.
+
+## The event study
+
+Three lines estimate one coefficient per year and read them.
+
+```{python}
+#| eval: false
+#| echo: true
+sc = base[~base["annee"].isin(range(2007, 2012))]             # 1
+es = pf.feols("res_uta ~ i(annee, lait, ref=2014) | id + reg_an",
+              sc, vcov=cl)                                    # 2
+es.coef()                                                     # 3
+```
+
+\small
+
+- **1** — drops the years 2007 to 2011, the dairy cycle excluded ex ante; `~` negates
+  the condition.
+- **2** — `i(annee, lait, ref=2014)` builds one dummy per year, **multiplied by** the
+  treated indicator, and leaves 2014 out as the reference. The coefficient of each
+  dummy is $\beta_k$: the dairy-minus-goat gap in that year, relative to 2014.
+- **3** — the coefficients, named `annee::2015:lait` and so on. The years before 2015
+  are the pre-trend check, the years after trace the effect. The four-digit year can be
+  read out of each name with a regular expression.
+
+## Pre-trend test, placebo date, balanced panel
+
+Three groups of lines produce the checks of the chapter.
+
+```{python}
+#| eval: false
+#| echo: true
+b = es.coef()[pre]; V = es._vcov[np.ix_(idx, idx)]            # 1
+W = b @ np.linalg.solve(V, b)                                 # 2
+p = 1 - stats.chi2.cdf(W, len(b))                             # 3
+pl = base[base["annee"].between(2000, 2006)].copy()           # 4
+pl["d_pl"] = pl["lait"] * (pl["annee"] >= 2004).astype(int)   # 5
+bal = base[base["id"].isin(ids_bal)
+           & base["annee"].between(2012, 2018)]               # 6
+```
+
+\small
+
+- **1** to **3** — the joint test that all pre-2015 coefficients are zero. `pre` lists
+  their names, `idx` their positions; `b` is the vector of estimates, `V` their covariance
+  block (`np.ix_` selects it); `W = b'V^{-1}b` is the Wald statistic, $\chi^2$ under
+  $H_0$ with as many degrees of freedom as coefficients.
+- **4**, **5** — the placebo: pre-period only, a fake treatment date in 2004; the
+  coefficient of `d_pl` should be near zero.
+- **6** — the balanced panel: `ids_bal` lists the farms present every year from 2012 to
+  2018; the sample keeps them over those years, so the set of farms observed no longer
+  changes.
 
 ## References {.allowframebreaks}
 
