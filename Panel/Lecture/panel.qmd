@@ -13,7 +13,8 @@ format:
     toc: false
 bibliography: references.bib
 nocite: |
-  @wooldridge2025
+  @wooldridge2025, @cgm2011, @conley1999, @driscollkraay1998, @hsiang2016, @mnw2021,
+  @young2019
 ---
 
 ## What is panel data?
@@ -28,7 +29,7 @@ Higher dimensions are common:
 - exports between $i$ and $j$, at time $t$, for product $k$;
 - wages of workers $i$ in sectors $k$, cities $c$, over years $t$.
 
-## The problem: what the error hides
+## The first problem: what the error hides
 
 We want the causal effect $\beta$ of $x_{it}$ on $y_{it}$. Run a naive regression and
 everything we cannot measure lands in the error:
@@ -45,6 +46,26 @@ $$ y_{it}=\alpha+\beta x_{it}+\varepsilon_{it}, \qquad
 Observing the \emph{same} units over \emph{several} periods lets us \textbf{sweep $f_i$
 and $f_t$ out of the error} --- identifying $\beta$ even when they correlate with $x$.
 \end{alertblock}
+
+## The second problem: errors that move together
+
+Problem 1 in one line: $\hat\beta=(X'X)^{-1}X'y$ is biased when $\E[\varepsilon\mid X]\neq 0$,
+and $\varepsilon$ contains $f_i+f_t$. Sections 1–3 remove them by **transforming the data**
+before running OLS.
+
+A second problem sits in the same error. Take one unit in two periods $s$ and $t$:
+$$ \begin{aligned}
+   \varepsilon_{is}&=f_i+f_s+u_{is}, \qquad \varepsilon_{it}=f_i+f_t+u_{it}\\
+   \Cov(\varepsilon_{is},\varepsilon_{it})&=\Var(f_i)+\Cov(u_{is},u_{it})\neq 0.
+   \end{aligned} $$
+
+- The errors of the **same unit are correlated** across its periods. This does not bias
+  $\hat\beta$; it changes its **variance**,
+  $$ \Var(\hat\beta)=(X'X)^{-1}\,X'\Omega X\,(X'X)^{-1},\qquad
+     \Omega=\E[\varepsilon\varepsilon'\mid X]. $$
+- Default software assumes $\Omega=\sigma^2 I$, independent errors. Here that is false,
+  and the printed standard errors are **too small**.
+- The section *Clustered standard errors* gives the correct $\Omega$.
 
 ## Balanced vs. unbalanced panels
 
@@ -65,7 +86,8 @@ we flag where it bites.
 2. Estimators that **ignore** heterogeneity: pooled OLS and between.
 3. The **within (fixed-effects)** estimator.
 4. **Two-way fixed effects**.
-5. Application: temperature and growth [@djo2012].
+5. Standard errors: what $\Omega$ is (clustering).
+6. Application: temperature and growth [@djo2012].
 
 \vfill
 \footnotesize
@@ -74,23 +96,6 @@ $\Cov(x_{it},f_i)=0$ — the very assumption panel data let us **avoid** — so 
 defensible in modern applied work.
 
 # Naive estimators
-
-## OLS in matrix form: one engine, four datasets
-
-Stack all $NT$ observations. With outcome vector $y$ ($NT\times1$) and regressor matrix
-$X$ ($NT\times k$), every model in this lecture is the **same** least-squares problem:
-$$ y=X\beta+\varepsilon, \qquad \hat\beta_{\text{OLS}}=(X'X)^{-1}X'y. $$
-
-- The four estimators — **pooled, between, within, TWFE** — are this one formula applied
-  to **four transformations of the data**: raw rows, unit means, deviations from unit
-  means, and double-demeaned data.
-- They differ only in **which variation in $x$** they exploit — *between* (across units,
-  in the means $\bar x_i$) vs. *within* (over time inside a unit, $x_{it}-\bar x_i$) —
-  hence in **what they must assume away**.
-- The sampling variance is always the **sandwich**
-  $$ \Var(\hat\beta)=(X'X)^{-1}\,X'\Omega X\,(X'X)^{-1},\qquad
-     \Omega=\E[\varepsilon\varepsilon'\mid X], $$
-  and the whole inference question is: **what is $\Omega$?** (we return to it).
 
 ## Pooled OLS
 
@@ -101,8 +106,9 @@ $$ y_{it}=\alpha+\beta x_{it}+\varepsilon_{it}, \qquad \varepsilon_{it}=f_i+f_t+
 - Removes **neither** $f_i$ nor $f_t$ from the error.
 - **Consistent only if** $\Cov(x_{it},f_i)=0$ **and** $\Cov(x_{it},f_t)=0$ — usually
   too strong.
-- $\varepsilon_{it}$ shares $f_i$ across all periods $\Rightarrow$ **serially
-  correlated** within $i$ $\Rightarrow$ cluster standard errors by $i$.
+- $\varepsilon_{it}$ shares $f_i$ across all periods, so a unit's errors are
+  **correlated with each other**: the second problem, treated in the section
+  *Clustered standard errors*.
 
 \begin{alertblock}{The bias, exactly}
 With a single regressor and exogenous idiosyncratic error ($\Cov(x_{it},u_{it})=0$),
@@ -131,18 +137,18 @@ $$ \bar\varepsilon_i=f_i+\bar f+\bar u_i, \qquad \bar f=\tfrac1T\textstyle\sum_t
 
 ## What does each estimator remove from the error?
 
-The error hides two unobserved effects, $f_i$ and $f_t$. Each estimator differs by
-**which one it sweeps out**:
+The error hides two unobserved effects, $f_i$ and $f_t$. Each estimator is OLS on
+transformed data, and the transformation decides **which effect leaves the error**:
 
 \begin{center}
-\begin{tabular}{lccl}
+\begin{tabular}{llccl}
 \toprule
- & removes $f_i$? & removes $f_t$? & left biased by\\
+ & data fed to OLS & removes $f_i$? & removes $f_t$? & left biased by\\
 \midrule
-Pooled  & no  & no  & $f_i$ and $f_t$\\
-Between & no  & yes & $f_i$\\
-Within  & yes & no  & $f_t$\\
-TWFE    & yes & yes & ---\\
+Pooled  & raw rows $x_{it}$ & no  & no  & $f_i$ and $f_t$\\
+Between & unit means $\bar x_i$ & no  & yes & $f_i$\\
+Within  & $x_{it}-\bar x_i$ & yes & no  & $f_t$\\
+TWFE    & $x_{it}-\bar x_i-\bar x_t+\bar x$ & yes & yes & ---\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -275,9 +281,10 @@ $$ \hat\beta_{TWFE}=\frac{\sum_{it}\ddot x_{it}\,\ddot y_{it}}{\sum_{it}\ddot x_
 
 ## The variance of FE estimators: where inference enters
 
-We now have our point estimates — within and TWFE. The coefficient is settled; its
-**standard error** is not. By FWL any FE estimator is OLS on $M_D$-residualized data, so
-we just **replace $X$ by $M_DX$** in the spine's sandwich:
+The first problem is settled: within and TWFE remove the effects from the error. The
+second remains: **what is $\Omega$?** By FWL any FE estimator is OLS on
+$M_D$-residualized data, so we just **replace $X$ by $M_DX$** in the variance formula of
+the second-problem slide:
 $$ \Var(\hat\beta_{\text{FE}})=(X'M_DX)^{-1}\big(X'M_D\,\Omega\,M_DX\big)(X'M_DX)^{-1}, $$
 where $M_D$ sweeps out the fixed effects — unit dummies for within, **both** sets for TWFE.
 
@@ -420,6 +427,45 @@ $\approx 0$ in rich countries.
 *Country \& year FE; clustered by country. Testing $\beta+\alpha$ needs its **own** SE (a
 linear-combination test), not the stars on $\alpha$.*
 
+## Dell et al.: the clustering problem
+
+The regression is a country-year panel. Its errors can be correlated in two directions.
+
+- **Across years, within a country.** A growth shock persists, so the errors of one
+  country in 1990 and 1991 share it. Clustering by country allows any correlation inside
+  a country's block ($G=125$).
+- **Across countries, within a year.** A drought or an El Niño year hits neighbouring
+  countries at once; the region$\times$year effect removes the common part, the rest is
+  correlated inside the region-year cell. Clustering by region-year allows it.
+- **Both at once: two-way clustering** (Cameron et al. 2011): country blocks plus
+  region-year blocks, minus the overlap counted twice.
+
+Dell et al. cluster by country in Table 2 (the estimates above) and two-way from
+Table 3 on: the practice of 2012. The next slide gives the current one.
+
+## Country-year panels today: two directions, two tools
+
+Weather shocks are correlated over time inside a country and across space between
+countries. Each direction has its tool.
+
+\small
+
+- **Serial correlation inside a country: cluster by country.** Dell et al. do this;
+  125 clusters is enough. It leaves the second direction untreated.
+- **Spatial correlation between countries: Conley (1999) standard errors.** The
+  correlation of shocks decays with distance, not at a region border. Each pair of
+  observations enters $\Omega$ with a weight that declines with the distance between the
+  units, up to a cutoff (1 000 km, say). A distance cutoff replaces the choice of a
+  cluster. Standard in the climate–economy literature since Hsiang (2016).
+- **Long panels: Driscoll–Kraay (1998) standard errors** allow any cross-sectional
+  correlation but need a long $T$ ($T\approx 50$ here). A cross-check of Conley.
+- **Two-way clustering by country and region-year** has few groups in the second
+  dimension; its variance can fail to be positive definite (MacKinnon et al. 2021).
+  Prefer Conley when coordinates exist.
+- **Whatever the choice, check the size.** Reassign the weather series across countries
+  at random, re-estimate, count the rejections at 5 %: Dell et al. found 4 %.
+  Randomisation inference remains the recommendation (Young 2019).
+
 # Python
 
 ## The toolkit and long format
@@ -445,117 +491,152 @@ Niger & 2001 & 0.2 & 30\\
 \normalsize
 (Wide data — one column per year — must be **reshaped** to long first.)
 
-## Load, inspect, and check the panel
+## Load the panel and check its structure
+
+Four lines open the file and describe how many periods each unit is observed.
 
 ```{python}
 #| eval: false
 #| echo: true
 import pandas as pd, pyfixest as pf
-
-df = pd.read_stata("growth.dta")     # long: id, year, ...
-df.groupby("country").size()         # periods per unit
-df["country"].nunique()              # number of units N
+df  = pd.read_csv("rica_panel.csv")   # 1
+n_t = df.groupby("id").size()         # 2
+df["id"].nunique()                    # 3
+n_t.describe()                        # 4
 ```
 
-- **Balanced** if every unit has the same count. **Singletons** (one period) carry no
-  within variation and are dropped by the fixed effects.
+\small
 
-## Pooled $\to$ within $\to$ TWFE
+- **1** — reads the file into a table `df` in long format: one row per farm and year.
+- **2** — counts the rows of each farm, that is $T_i$. `groupby("id")` splits the table
+  by farm, `.size()` counts the rows of each group; `n_t` has one value per farm.
+- **3** — the number of distinct farms, $N$.
+- **4** — the distribution of $T_i$: a minimum of 1 signals **singletons**, farms seen
+  once, which carry no within variation and will be dropped by the fixed effects.
+
+## Within and between variation of a variable
+
+Five lines split the variation of `x` into its within and between parts.
 
 ```{python}
 #| eval: false
 #| echo: true
-cl = {"CRV1": "country"}     # cluster by unit
-
-m_pool   = pf.feols("growth ~ temp", df, vcov=cl)
-m_within = pf.feols("growth ~ temp | country", df, vcov=cl)
-m_twfe   = pf.feols("growth ~ temp | country + year",
-                    df, vcov=cl)
+moy_i = df.groupby("id")["x"].transform("mean")    # 1
+within = df["x"] - moy_i                           # 2
+S_W = (within ** 2).sum()                          # 3
+S_B = ((moy_i - df["x"].mean()) ** 2).sum()        # 4
+w = S_W / (S_W + S_B)                              # 5
 ```
 
-- `| country` absorbs $f_i$; `| country + year` absorbs $f_i$ **and** $f_t$ (TWFE).
-- *(Between: regress the unit means — `df.groupby("country").mean()` then `feols` —
-  rarely used.)*
+\small
 
-## Compare the estimators in one table
+- **1** — the mean of `x` in each farm, written on **every row of that farm**; this is
+  what `.transform("mean")` does, unlike `.mean()`, which would give one row per farm.
+- **2** — each observation minus its farm's mean: the within deviation.
+- **3** — the within sum of squares $S_W$.
+- **4** — the between sum of squares $S_B$: each farm's mean minus the overall mean,
+  squared and summed, so a farm counts $T_i$ times.
+- **5** — the within share $w$ of the chapter. A small $w$ means the estimator that
+  uses within variation only works with a small part of the data.
+
+## The four estimators with one function
+
+Seven lines estimate pooled, between, within and TWFE, with standard errors clustered by
+farm (line 1, stored once), and put them side by side.
 
 ```{python}
 #| eval: false
 #| echo: true
-pf.etable([m_pool, m_within, m_twfe])    # side by side
+cl = {"CRV1": "id"}                                        # 1
+m_pool = pf.feols("y ~ x + C(region)", df, vcov=cl)        # 2
+moy    = df.groupby("id")[["y", "x"]].mean()               # 3
+m_betw = pf.feols("y ~ x", moy, vcov="hetero")             # 4
+m_with = pf.feols("y ~ x | id", df, vcov=cl)               # 5
+m_twfe = pf.feols("y ~ x | id + annee", df, vcov=cl)       # 6
+pf.etable([m_pool, m_betw, m_with, m_twfe])                # 7
 ```
 
-- Watch $\hat\beta_{\text{temp}}$ **change** as each fixed effect enters — exactly the
-  spine of this chapter (pooled keeps $f_i,f_t$; within drops $f_i$; TWFE drops both).
+\small
 
-## Heterogeneity and reading the output
+- **2** — pooled OLS: all rows together, region dummies as controls.
+- **3** and **4** — between: `moy` has one row per farm, the mean of `y` and `x`; the
+  regression on these means uses cross-farm variation only.
+- **5** — within: after `|`, `id` names the fixed effect to absorb, $f_i$.
+- **6** — TWFE: `id + annee` absorbs $f_i$ and $f_t$; singleton farms are dropped.
+- **7** — the four results in one table, to watch $\hat\beta$ change as each effect enters.
+
+## Read the results and the fixed effects
+
+Six lines pull out what the chapter asks for: coefficients, the year effects, residuals.
 
 ```{python}
 #| eval: false
 #| echo: true
-m = pf.feols("growth ~ temp*poor | country + year",
-             df, vcov=cl)
-m.summary()      # coef, se, t, p; within-R2; #FE
+b, se = m_twfe.coef()["x"], m_twfe.se()["x"]     # 1
+ci = m_twfe.confint().loc["x"]                   # 2
+t  = (b - 0.136) / se                            # 3
+fe = pd.Series(m_twfe.fixef()["C(annee)"])       # 4
+fe.loc[2000] = 0.0                               # 5
+u  = m_twfe.resid()                              # 6
 ```
 
-- `temp*poor` expands to `temp + poor + temp:poor`; **`poor` is time-invariant**, so the
-  country FE absorbs it — only `temp` and `temp:poor` are identified.
-- The output also reports the **within-$R^2$** (fit from within variation) and how many
-  fixed effects / observations were used.
+\small
 
-## Reporting, and a caveat
+- **1** and **2** — the coefficient, its standard error and its 95 % interval. In
+  `pyfixest` these are **methods**, with parentheses, unlike `statsmodels` attributes.
+- **3** — the $t$ of $H_0: \beta = 0{,}136$, a cost share; the summary tests zero only.
+- **4** — the estimated year effects $\hat f_t$, a dictionary keyed by the fixed-effect
+  name, turned into a series indexed by year.
+- **5** — the reference year is absorbed and not returned; adding it as zero lets you
+  read every $\hat f_t$ as a difference from 2000.
+- **6** — the residuals, one per observation the estimation used, in the same order.
+
+## Four standard errors for one coefficient
+
+Three lines re-estimate the same model under four assumptions on the error covariance.
 
 ```{python}
 #| eval: false
 #| echo: true
-pf.etable([m_within, m_twfe], type="tex")   # LaTeX table
+for v in ["iid", "hetero", {"CRV1": "id"}, {"CRV1": "region"}]: # 1
+    m = pf.feols("y ~ x | id + annee", df, vcov=v)             # 2
+    print(m.se()["x"], m._G)                                   # 3
 ```
 
-- Cluster-robust SEs need **many clusters**; with few, use a **wild-cluster bootstrap**.
-- `pyfixest` $\approx$ Stata `reghdfe` $\approx$ R `fixest` — the same FE-absorption idea.
+\small
 
-## The same in R (fixest)
+- **1** — the four choices of $\Omega$ from the appendix: classical, heteroskedastic,
+  clustered by farm, clustered by region.
+- **2** — `vcov` is the only thing that changes; $\hat\beta$ is identical each time.
+- **3** — the standard error under each choice, and `_G`, the number of clusters the
+  estimation actually used, after dropping singletons. The Moulton factor of the chapter
+  is checked against the ratio of the third to the second.
 
-```r
-library(fixest)
-# within / TWFE / interaction, clustered by country
-feols(growth ~ temp | country, df, cluster=~country)
-feols(growth ~ temp | country + year, df, cluster=~country)
-feols(growth ~ temp*poor | country + year, df,
-      cluster=~country)
-etable(m1, m2)        # to="tex" gives a LaTeX table
+## Why cluster: the residuals of a farm resemble one another
+
+Four lines measure the year-to-year correlation of a farm's residuals.
+
+```{python}
+#| eval: false
+#| echo: true
+r = df_used[["id", "annee"]].copy()               # 1
+r["u"] = m_twfe.resid()                           # 2
+r["u_lag"] = r.groupby("id")["u"].shift(1)        # 3
+rho = r[["u", "u_lag"]].corr().iloc[0, 1]         # 4
 ```
 
-- Near-identical syntax: `y ~ x | FE1 + FE2`, `cluster = ~id`. Use whichever you prefer.
+\small
 
-## A caution: TWFE, DiD, and treatment timing
+- **1** — a small table with the farm and the year of every observation the estimation
+  used; `df_used` is `df` without the singletons, so that it lines up with the residuals.
+- **2** — attaches the residuals to it.
+- **3** — the residual of the **previous row of the same farm**: `groupby("id")` keeps
+  the shift inside each farm, `shift(1)` moves values down one row. Sort by farm and year
+  first, and keep only consecutive years.
+- **4** — the correlation between a residual and its lag, $\rho$. Positive means a farm's
+  observations are not independent draws, which is what clustering accounts for.
 
-TWFE is the engine of difference-in-differences — but a warning for what comes next:
-
-- With **staggered** treatment timing and **heterogeneous** effects, the TWFE DiD
-  coefficient is a *contaminated* weighted average of effects — it can even be
-  **negative** when every true effect is positive. *(A single-timing $2\times2$ DiD is
-  unaffected.)*
-- See Goodman-Bacon (2021) and de Chaisemartin–D'Haultfœuille (2020); newer estimators
-  repair this.
-- The **shift-share / IV** designs of the next course offer another route to credible
-  causal effects.
-
-## Takeaways
-
-- The error hides two unobserved effects — an individual $f_i$ and a time $f_t$; panel
-  methods **sweep them out**.
-- **Pooled / between** use cross-sectional variation → **biased** under correlated
-  heterogeneity.
-- **Within (FE)** → **consistent** despite $f_i$, but cannot identify time-invariant
-  regressors and needs **strict exogeneity**.
-- **TWFE** also nets out common time shocks — the workhorse, and the bridge to DiD.
-- FE/TWFE removes confounders **en bloc**: it nets out $f_i$ and $f_t$ without telling
-  us *which* underlying variables they stood for.
-- Always **cluster** standard errors (usually by unit) — and check you have enough
-  clusters.
-
-## References
+## References {.allowframebreaks}
 
 \footnotesize
 For a fuller textbook treatment of every method in this chapter, see Wooldridge (2025).

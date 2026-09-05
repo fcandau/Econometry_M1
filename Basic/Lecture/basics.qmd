@@ -28,6 +28,10 @@ nocite: |
 - **Result:** an accurate prediction; Ceres is found again. **Ordinary Least Squares
   (OLS)** is born.
 
+\begin{center}
+\includegraphics[width=0.25\textwidth]{fig/gauss_ceres.jpg}
+\end{center}
+
 ## OLS in one picture
 
 $$ y_i = \beta_0 + \beta_1 x_i + \varepsilon_i $$
@@ -218,6 +222,10 @@ can be wrong, and how to fix it (robust SE).
 - His **$t$-distribution** describes the estimator's behaviour when $\sigma^2$ is itself
   estimated and $n$ is small — exactly our situation.
 - *Hold your beer:* it is the workhorse of significance testing.
+
+\begin{center}
+\includegraphics[width=0.52\textwidth]{fig/student.png}
+\end{center}
 
 ## The $t$-statistic: $\hat\beta$ in standard-error units
 
@@ -474,95 +482,190 @@ and \textbf{instrumental variables} (later: shift-share).
 \small
 | package | use it for |
 |---|---|
-| `pandas` | load, inspect, clean, merge, transform data (the `DataFrame`) |
-| `numpy` | numerical operations (logs, powers, arrays) |
-| `statsmodels` | **estimation + inference** (coef, se, $t$, $p$, CI) and **diagnostic tests** |
+| `pandas` | load, inspect, select, transform data (the `DataFrame`) |
+| `numpy` | numerical operations (logs, powers) |
+| `statsmodels` | **estimation + inference** (coef, se, $t$, $p$, CI) and diagnostic tests |
 | `matplotlib` | plots and visual checks |
 
 \normalsize
-Typical workflow: **load $\to$ inspect $\to$ transform $\to$ estimate $\to$ robust SE
-$\to$ diagnostics.** (Fixed effects and IV come later, with `pyfixest`.)
+Workflow: **load $\to$ inspect $\to$ select the sample $\to$ transform $\to$ estimate
+$\to$ read the numbers $\to$ test $\to$ diagnose.**
 
 ## Load and inspect (pandas)
+
+Six lines open the file and show what it contains.
 
 ```{python}
 #| eval: false
 #| echo: true
 import pandas as pd
-
-df = pd.read_stata("wage.dta")        # or read_csv / read_excel
-df.head(); df.describe(); df.info()   # inspect first!
-df = pd.merge(df, dr, on="id", how="inner")
+df = pd.read_csv("rica_2023.csv")   # 1
+df.shape                            # 2
+df.head()                           # 3
+df.info()                           # 4
+df.describe().T                     # 5
+df["ote_lib"].value_counts()        # 6
 ```
 
-- **Always inspect before estimating**: types, ranges, missing values, oddities.
-- `merge`: `inner` keeps matched rows, `outer` keeps all (gaps → `NaN`), `left`/`right`
-  keep one side. Windows paths: prefix with `r"..."`.
+\small
+
+- **1** — reads the file into a table `df`: one row per farm, one column per variable.
+- **2** and **3** — the size of the table, rows and columns, then its first five rows.
+- **4** — the type of each column and how many values are missing.
+- **5** — mean, sd, min, quartiles, max per numeric column; `.T` puts variables in rows.
+- **6** — counts the farms of each type of production; `df["ote_lib"]` is that column.
+- Two files on the same farms? `df.merge(other, on="id")` joins them by identifier.
+
+## Select the sample you estimate on
+
+These five lines build the table on which every regression will then run.
+
+```{python}
+#| eval: false
+#| echo: true
+gc = df[df["ote"] == 1516].copy()                             # 1
+inputs = ["pesticides", "fertiliser", "seeds"]                # 2
+ok  = (gc["output"] >= 5000) & (gc[inputs] > 0).all(axis=1)   # 3
+est = gc[ok].copy()                                           # 4
+print(len(gc) - len(est), "farms dropped")                    # 5
+```
+
+\small
+
+- **1** — keeps only the farms whose type of production, `ote`, is 1516, which are the
+  field-crop farms (cereals, oilseeds, beet). `gc` is that smaller table.
+- **2** — a list of three column names, stored once so we never retype them.
+- **3** — marks the farms with an output of at least 5 000 € **and** a positive spending
+  on each of the three inputs. In the code: `gc["output"] >= 5000` gives a `True` or
+  `False` per farm; `gc[inputs] > 0` does the same for the three columns at once, and
+  `.all(axis=1)` reduces them to one `True` per farm, `True` only if the three are; `&`
+  combines the two conditions. `ok` is therefore one `True`/`False` per farm.
+- **4** — keeps the farms marked `True`. `est` is the table the regressions will use.
+- **5** — prints how many farms the two conditions removed.
 
 ## Transform variables (pandas + numpy)
+
+Two lines create the variables the model needs from the ones the file contains.
 
 ```{python}
 #| eval: false
 #| echo: true
 import numpy as np
 
-df["lwage"]  = np.log(df["wage"])     # logs via numpy
-df["exper2"] = df["exper"]**2         # quadratic term
+est["l_output"] = np.log(est["output"])   # 1
+est["exper2"]   = est["exper"]**2         # 2
 ```
 
-- For **dummies/categoricals**, don't recode by hand — let the formula do it with
-  `C(...)`: e.g. `C(sector)` expands a category into dummies (one level kept as
-  baseline).
+- **1** — takes the logarithm of each farm's output and stores it in a new column,
+  `l_output`; in logs the coefficients of a Cobb–Douglas are elasticities. In the code:
+  `est["output"]` is the column, `np.log` applies the logarithm to each of its values,
+  and writing `est["l_output"] = ...` adds the result to the table as a new column.
+- **2** — the square of experience, for a model in which the effect of experience
+  bends; `**2` means "to the power two".
 
-## Estimate and read the output (statsmodels)
+## Estimate (statsmodels)
+
+Three lines estimate the model and print the standard output.
 
 ```{python}
 #| eval: false
 #| echo: true
 import statsmodels.formula.api as smf
 
-f = "lwage ~ woman + educ + exper"
-m = smf.ols(f, df).fit()
-print(m.summary())     # coef, se, t, p-value, 95% CI
+f = "l_output ~ l_pest + l_fert + C(region)"           # 1
+m = smf.ols(f, est).fit(cov_type="HC3", use_t=True)   # 2
+print(m.summary())                                    # 3
 ```
 
-- Formula syntax: `~` splits $y$ from the regressors; `x1*x2` adds both terms **and**
-  their interaction; `C(g)` makes dummies.
-- Each summary row is exactly what we covered: $\hat\beta$, its se, the $t$-stat, the
-  $p$-value, and the 95% CI.
+\small
 
-## Best practice: robust standard errors by default
+- **1** — the model, written as a text: `~` separates $y$, on the left, from the
+  regressors, on the right; `+` adds a regressor; `C(region)` turns the region code into
+  dummies, one level serving as the baseline.
+- **2** — estimates it by OLS on the table `est`. `cov_type="HC3"` asks for **robust**
+  standard errors: $\hat\beta$ is unchanged, se, $t$, $p$ and CI are corrected; make it
+  your default in cross-sections. `use_t=True` reports Student's $t$; without it the
+  column is headed $z$. `m` holds everything the estimation produced.
+- **3** — prints the summary: one row per regressor with $\hat\beta$, its se, the $t$,
+  the $p$-value and the 95 % CI. It is for **reading**; the next slide is for
+  **computing**.
+
+## Get the numbers out of the estimation
+
+Five lines pull single numbers out of `m`, to compute what the summary does not print.
 
 ```{python}
 #| eval: false
 #| echo: true
-# reuse the formula f from the previous slide
-m = smf.ols(f, df).fit(cov_type="HC3")   # robust SE
-m = smf.ols("y ~ x", df).fit(cov_type="HAC",
-            cov_kwds={"maxlags": 4})     # time series
+b  = m.params["l_pest"]           # 1
+se = m.bse["l_pest"]              # 2
+p  = m.pvalues["l_pest"]          # 3
+ci = m.conf_int().loc["l_pest"]   # 4
+m.resid, m.fittedvalues           # 5
 ```
 
-- `cov_type="HC3"` leaves $\hat\beta$ unchanged and corrects se, $t$, $p$, CI — make it
-  your **default** in cross-sections.
-- For time series use **HAC** (Newey–West); set `maxlags` from the data frequency.
+\small
 
-## Diagnostics, when you need them (statsmodels.stats)
+- **1** — the estimated coefficient of `l_pest`, $\hat\beta$, stored in `b`. `m.params`
+  holds all the coefficients, indexed by variable name; `["l_pest"]` picks one.
+- **2** — its standard error, taken the same way from `m.bse`.
+- **3** — its $p$-value, for the test $\beta = 0$ and that test only.
+- **4** — its 95 % confidence interval: two numbers, the lower and the upper bound.
+- **5** — the residuals and the fitted values, one of each per farm, for the diagnostics.
+- With these you compute what the summary never shows: a marginal product
+  $\hat\beta/s$, a $t$ against a value other than zero, a figure of the residuals.
+
+## Test a null hypothesis that is not zero
+
+The summary tests $\beta = 0$ only. Theory usually names another value, here a cost
+share of 0.113; three lines test it.
 
 ```{python}
 #| eval: false
 #| echo: true
+from scipy import stats
+
+t = (b - 0.113) / se                       # 1
+p = 2 * stats.t.sf(abs(t), df=m.df_resid)  # 2
+m.t_test("l_pest = 0.113")                 # 3
+```
+
+\small
+
+- **1** — the $t$ statistic by hand: the distance between the estimate and the value
+  tested, in standard-error units.
+- **2** — its two-sided $p$-value. `stats.t.sf(x, df)` is the probability that a
+  Student's $t$ with `df` degrees of freedom exceeds `x`; `abs(t)` takes the distance
+  whatever its sign, the factor 2 counts both tails, and `m.df_resid` is $n-k-1$.
+- **3** — the same test done by `statsmodels`, which prints $t$, $p$ and the CI. The
+  hypothesis is written as a text, so any linear one works: `"l_pest + l_fert = 1"`
+  tests constant returns to scale.
+
+## Diagnostics, when you need them
+
+Three lines check the assumptions on the residuals of `m`.
+
+```{python}
+#| eval: false
+#| echo: true
+import matplotlib.pyplot as plt
 from statsmodels.stats import diagnostic as smd
-from statsmodels.stats.stattools import jarque_bera
-
-_, p_white, _, _ = smd.het_white(m.resid, m.model.exog)
-_, p_bp, _, _    = smd.het_breuschpagan(m.resid, m.model.exog)
-jb, p_jb, *_     = jarque_bera(m.resid)            # normality
+plt.scatter(m.fittedvalues, m.resid, s=8)                     # 1
+_, p_bp, _, _ = smd.het_breuschpagan(m.resid, m.model.exog)   # 2
+variance_inflation_factor(m.model.exog, 1)                    # 3
 ```
 
-- With robust SE already the default, you test mainly to **understand** the data — and
-  to decide whether time-series data need **HAC**. A small $p$ flags the problem.
-- **Don't test-then-switch:** pre-testing distorts inference; defaulting to robust SE
-  avoids it. (`het_white` can fail with many regressors — fall back to Breusch–Pagan.)
+\small
+
+- **1** — draws the residuals against the fitted values, one point per farm (`s=8` sets
+  the point size). A spread that changes along the axis suggests a non-constant
+  variance.
+- **2** — the Breusch–Pagan test of constant variance on the regressors the model used,
+  `m.model.exog`; `_` discards the returned numbers except the $p$-value. A small $p$
+  rejects constant variance. The robust SE is used **whatever the test says**.
+- **3** — the variance inflation factor of the regressor in column 1 of that matrix,
+  column 0 being the constant; above 10 is the usual alarm. Imported from
+  `statsmodels.stats.outliers_influence`.
 
 ## Reference
 
