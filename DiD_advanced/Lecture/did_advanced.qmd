@@ -1,0 +1,295 @@
+---
+title: "Difference-in-Differences"
+subtitle: "Beyond the Switch: Doses, Treatments that Turn On and Off"
+author: "F. Candau (UPPA-TREE)"
+format:
+  beamer:
+    theme: Madrid
+    classoption: ["10pt"]
+    include-in-header: preamble.tex
+    pdf-engine: pdflatex
+    slide-level: 2
+    toc: false
+bibliography: references.bib
+nocite: |
+  @baker2026, @cgs2024, @dcdh2020, @dcdh2024, @dcdhpv2024,
+  @imaikimwang2023, @liuwangxu2024, @angristimbens1995,
+  @callawaysantanna2021, @rambachanroth2023, @rothsantanna2023ecta
+---
+
+## Sum up, and what comes next
+
+The two previous chapters had a treatment that is a **switch**: zero, then one, and one for
+good. One date (chapter 4), or one date per unit (chapter 5).
+
+Two departures from the switch occur in much applied work:
+
+1. the treatment is a **dose** — a tax rate, an aid amount per hectare, an exposure share;
+2. the treatment **turns on and off** — a ban lifted by derogation then reinstated, a
+   temporary programme, a threshold crossed in both directions.
+
+\begin{block}{This chapter}
+Each departure changes the potential outcomes, the parameter, and the parallel-trends
+assumption. The regression with two-way fixed effects has the same form in both cases, so
+it does not display the change. The chapter writes out what changes in each case and what
+the corresponding estimator computes.
+\end{block}
+
+## Roadmap
+
+1. **Doses** — potential outcomes indexed by a dose; the level effect $\text{ATT}(d\mid d)$
+   versus the causal response; what strong parallel trends identify; what the two-way
+   fixed-effects coefficient mixes.
+2. **On and off** — treatment sequences; the curse of dimensionality; no-carryover; the
+   switchers estimator of de Chaisemartin and D'Haultfœuille and its event-study version.
+3. **Workflow** — the same forward engineering, twice.
+
+\vspace{6pt}
+\footnotesize *Reference for the whole chapter: Baker, Callaway, Cunningham, Goodman-Bacon
+\& Sant'Anna (2026), Appendix A; Callaway, Goodman-Bacon \& Sant'Anna (2024); de
+Chaisemartin \& D'Haultfœuille (2020, 2024).*
+
+# Doses
+
+## Potential outcomes with a dose
+
+Two periods; nobody treated in period 1; in period 2 unit $i$ receives a dose $D_i \ge 0$
+(possibly zero). The potential outcome $Y_{it}(d)$ is the outcome under dose $d$;
+$Y_{it}(0)$ is the untreated outcome. **Groups are defined by the dose.**
+
+- Examples: a per-hectare aid amount; the share of a farm's land in a regulated zone; the
+  exposure share of chapter 3.
+- Level parameters:
+  $$ \text{ATT}(d\mid d)=\E\big[Y_2(d)-Y_2(0)\mid D=d\big],\qquad
+     \text{ATE}(d)=\E\big[Y_2(d)-Y_2(0)\big]. $$
+  The first is the effect of dose $d$ on the units that received $d$; the second, on a
+  unit drawn at random.
+- **Average causal response** (ACR): the effect of a marginal increment of the dose; ACRT,
+  its version on the treated:
+  $$ \text{ACR}(d)=\frac{\partial\,\text{ATE}(d)}{\partial d},\qquad
+     \text{ACRT}(d\mid d)=\frac{\partial\,\text{ATT}(l\mid d)}{\partial l}\Big|_{l=d}, $$
+  where $\text{ATT}(l\mid d)=\E[Y_2(l)-Y_2(0)\mid D=d]$ is the effect of dose $l$ on the
+  units that received $d$ (Angrist and Imbens 1995 for variable treatment intensity).
+- Per-dose versions, $\text{ATT}(d\mid d)/d$: the effect per unit of dose.
+
+## Two parallel-trends assumptions
+
+\begin{block}{Parallel trends, dose version}
+For every dose $d$: $\E[\Delta Y(0)\mid D=d]=\E[\Delta Y(0)\mid D=0]$ — the units at dose
+$d$ would have moved like the untreated units.
+\end{block}
+
+Under it, $\text{ATT}(d\mid d)$ and the whole curve $d\mapsto\text{ATT}(d\mid d)$ are
+identified as in the binary case (Callaway et al. 2024).
+
+\begin{alertblock}{The slope of that curve contains selection}
+$\text{ATT}(d'\mid d')-\text{ATT}(d\mid d)$ compares two different groups of units; those
+who chose a higher dose may have a higher return to it:
+$\frac{d}{dd}\text{ATT}(d\mid d)=\text{ACRT}(d\mid d)+\partial\text{ATT}(d\mid d')/\partial
+d'\,\big|_{d'=d}$, the second term being \textbf{selection into dose}.
+\end{alertblock}
+
+$\text{ATE}(d)$, $\text{ACR}(d)$ and comparisons across doses require **strong parallel
+trends**, $\E[\Delta Y(d)\mid D=d']=\E[\Delta Y(d)\mid D=d]$ for all $d, d'$: every group
+would have responded to dose $d$ alike, an assumption on \emph{treated} potential outcomes.
+Then $\text{ATT}(d\mid d)=\text{ATE}(d)$ and the slope of the curve is the causal response.
+
+## The curve and its slope
+
+\begin{center}
+\includegraphics[width=0.82\textwidth]{fig/dose_response.png}
+\end{center}
+
+\footnotesize Simulated: units with the steepest response choose the highest dose. Solid
+curve: $\text{ATT}(d\mid d)$, identified under parallel trends; dashed: $\text{ATE}(d)$;
+dotted segment: the causal response at $d=0.6$. The slope of the solid curve adds the
+selection term to the causal response. Under strong parallel trends the two curves coincide.
+
+## What the two-way fixed-effects coefficient mixes
+
+The natural regression puts the dose on the right-hand side:
+$$ y_{it}=f_i+f_t+\beta\,D_i\cdot\text{Post}_t+u_{it}. $$
+
+- With a binary treatment, $\beta$ is the $2\times2$ DiD. With a dose, $\beta$ is a
+  **weighted average of causal responses across doses** plus selection terms (Callaway et
+  al. 2024: several decompositions exist, "all having important limitations as meaningful
+  summaries of treatment effects").
+- The weights come from the variance of the dose, as in chapter 5 they came from the
+  variance of the timing: doses far from the mean weigh most.
+- Under strong parallel trends the selection terms vanish and $\beta$ is a dose-variance
+  weighted average of $\text{ACR}(d)$.
+
+\begin{block}{Forward engineering, dose version}
+Report the level curve $\text{ATT}(d\mid d)$ (binned doses) and its aggregate
+$\E[\text{ATT}(D\mid D)\mid D>0]$; report the causal response separately, with the strong
+parallel-trends assumption written next to it.
+\end{block}
+
+## Two further cases
+
+- **Everybody already treated in period 1** at some level, doses change over time (a tax
+  rate revised every year). de Chaisemartin et al. (2024), a different paper from the
+  event study of the next section, identify per-dose effects for **switchers** when a
+  sizable set of units keep their dose (**stayers**) and past doses
+  do not affect current outcomes. Without stayers the comparison group is empty and DiD
+  identifies nothing without further structure.
+- **Functional form.** A dose-response in levels and one in logs impose different parallel
+  trends; the two cannot both hold unless trends are trivial. State the scale of the outcome
+  as part of the assumption (Roth and Sant'Anna 2023).
+- **Diagnostics** carry over dose by dose: pre-trends of each dose bin against the untreated,
+  and a Rambachan–Roth bound on the level curve.
+
+# On and off
+
+## Treatment sequences
+
+Treatment can be present in some periods and absent in others. The unit's treatment is a
+**path** $\mathbf d=(d_{i1},\dots,d_{iT})\in\{0,1\}^T$, and the potential outcome
+$Y_{it}(\mathbf d)$ depends on the whole path. **Groups are defined by paths.**
+
+- Three periods, nobody treated in period 1: four paths, $(0,0,0)$, $(0,0,1)$, $(0,1,1)$ and
+  $(0,1,0)$ — never, late, early, and **treated once then not**. Staggered adoption is the
+  special case where the path is determined by its first 1.
+- Building block: $\text{ATT}(\mathbf d,t)=\E[Y_t(\mathbf d)-Y_t(\mathbf 0)\mid G=\mathbf d]$,
+  the effect at $t$ of the path $\mathbf d$ against never being treated, for the units on
+  that path ($G$ = the unit's group, here its path); identified as in chapter 5 by
+  comparison with never- or not-yet-treated units.
+
+\begin{alertblock}{The curse of dimensionality}
+With $T$ periods there are up to $2^{T-1}$ paths, each a group, most of them small. The
+literature restricts \textbf{carryover}, the effect of past treatment on current outcomes,
+and targets aggregated parameters.
+\end{alertblock}
+
+## Carryover: what the switch-off identifies
+
+\begin{center}
+\includegraphics[width=0.78\textwidth]{fig/on_off.png}
+\end{center}
+
+\footnotesize A ban in force in periods 5–6, lifted in 7–8, reinstated in 9–10. Without
+carryover the outcome returns to the untreated path as soon as the ban is lifted; with
+carryover the off period shows a lagged effect. The off period identifies the persistence of
+the effect, provided the estimand allows for it; the estimand of de Chaisemartin and
+D'Haultfœuille (2024), two slides below, does.
+
+## Three ways to shrink the problem
+
+\footnotesize
+\begin{tabular}{@{}p{3.2cm} p{3.2cm} p{5.0cm}@{}}
+\toprule
+Paper & Restriction & What is estimated\\
+\midrule
+de Chaisemartin \& D'Haultfœuille (2020) & \textbf{no carryover}: the effect lasts one period & the instantaneous effect of the current treatment: units that \emph{switch} at $t$ against units whose treatment does not change ($\text{DID}_M$ in their notation)\\[3pt]
+Imai, Kim \& Wang (2023); Liu, Wang \& Xu (2024) & \textbf{limited carryover}: at most $k$ periods & the effect of switching at $t$ among units with the same treatment history over the last $k$ periods\\[3pt]
+de Chaisemartin \& D'Haultfœuille (2024) & no restriction on carryover; no anticipation; parallel trends of the \textbf{status-quo} outcome (period-1 treatment kept) & event-study effects of the \emph{actual} path, $\ell$ periods after the first change of treatment, against the status-quo path\\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\vspace{3pt}
+- Each restriction defines a different parameter: two rows, two different things estimated.
+- The two-way fixed-effects coefficient is a weighted sum of $\text{ATT}(\mathbf d,t)$ with
+  weights that can be negative (de Chaisemartin and D'Haultfœuille 2020): to the
+  already-treated comparisons of chapter 5 it adds comparisons with units just switched off.
+
+## The switchers event study
+
+de Chaisemartin and D'Haultfœuille (2024). Let $F_i$ be the first period where unit $i$'s
+treatment changes from its period-1 value. For horizon $\ell\ge 1$:
+
+- **Switchers**: units observed $\ell$ periods after their first switch, $t=F_i-1+\ell$,
+  whatever their treatment did in between.
+- **Comparison**: units with the same period-1 treatment whose treatment has **not yet
+  changed** at $t$ — the not-yet-switchers of chapter 5, at any baseline level.
+- $\text{DID}_\ell$: the change in outcomes of the switchers from $F_i-1$ to $F_i-1+\ell$,
+  minus the same change for the comparison units, aggregated across switching dates with
+  weights proportional to the number of switchers.
+
+\begin{block}{The estimand}
+The average effect, $\ell$ periods after the first switch, of having followed one's
+\textbf{actual} treatment path rather than the \textbf{status-quo} path (period-1 treatment
+kept throughout). The path is what is evaluated; current and lagged treatments enter
+together.
+\end{block}
+
+## Placebos, normalization, and how to read the curve
+
+- **Placebos** $\text{DID}_\ell^{pl}$: the same comparison over $\ell$ periods **before** the
+  switch, with the same units and weights as the effects.
+- **Normalized** version: $\text{DID}_\ell$ divided by the cumulative treatment difference
+  between switchers and comparisons, the sum from $F_i$ to $t$ of the gap between their
+  treatments — an effect per unit of treatment, for non-binary treatments or treatments
+  that turn off within the window.
+- The horizon $\ell$ counts periods **since the first switch**, whatever happened to the
+  treatment afterwards. If the treatment is on at $\ell=1,2,3$ and off at $\ell=4$,
+  $\text{DID}_4$ measures the effect of the path "on for three periods, off for one" — the
+  reversal is inside the estimand.
+- A treatment that returns to its baseline within the window makes the non-normalized
+  effect hard to read; the normalized effect is an average per period of exposure and
+  compares across horizons.
+
+## The switchers event study: who is compared at each horizon
+
+The curve of the previous slide is not drawn on a fixed set of units. At each horizon
+$\ell$, the switchers and their comparison units are those still available, so the groups
+change along the curve.
+
+- Comparison units are dropped from the horizon once their own treatment changes:
+  the group changes with $\ell$; report its size at each horizon.
+- The **same switchers** option keeps the set of switchers fixed across horizons, so the
+  curve is not driven by composition — the balanced-panel check of chapter 4, horizon by
+  horizon.
+- Units already treated in period 1 with a different baseline level are compared only with
+  units at the same level: two baselines, two separate DiDs, one aggregate.
+
+# Workflow
+
+## Conclusion: forward engineering, twice
+
+\footnotesize
+\begin{tabular}{@{}p{1.4cm} p{2.9cm} p{3.6cm} p{3.3cm}@{}}
+\toprule
+ & Potential outcome & Assumption & Estimator\\
+\midrule
+\textbf{Dose} & $Y_{it}(d)$; groups = doses & parallel trends per dose (level curve); strong parallel trends (responses) & binned $\text{ATT}(d\mid d)$ curve and aggregate; ACR only under strong PT\\[3pt]
+\textbf{On/off} & $Y_{it}(\mathbf d)$, $\mathbf d$ a path; groups = paths & parallel trends of the status-quo outcome; no anticipation; carryover restriction if any & switchers vs not-yet-switchers: $\text{DID}_\ell$, placebos, normalized\\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\vspace{3pt}
+- The diagnostics of chapters 4 and 5 apply cell by cell: pre-trends of each dose bin, each
+  path; a sensitivity bound on the block that carries the result.
+- In both cases the two-way fixed-effects coefficient is a weighted average of
+  building blocks, with weights set by the variance of the regressor and comparison cells
+  that may be treated.
+
+# In R
+
+## The switchers event study in R
+
+```r
+library(DIDmultiplegtDYN)
+# horizons 1..4 after the first switch, 3 placebos;
+# comparison = not-yet-switchers, same baseline treatment
+est <- did_multiplegt_dyn(
+  df, outcome = "y", group = "id", time = "t",
+  treatment = "d", effects = 4, placebo = 3,
+  cluster = "id", normalized = TRUE,
+  same_switchers = TRUE)
+summary(est)   # DID_l, placebos, switchers per horizon
+```
+
+- `normalized = TRUE` divides each effect by the cumulative treatment difference (the
+  per-period effect); `same_switchers = TRUE` fixes the composition across horizons.
+- `controls`, `trends_nonparam` (group-specific trends) and `by` (heterogeneity) exist;
+  each adds an assumption to state.
+- The output reports the number of switchers and comparison units at each horizon: put
+  it in the table.
+
+## References {.allowframebreaks}
+
+\fontsize{6.4}{7.1}\selectfont
+::: {#refs}
+:::

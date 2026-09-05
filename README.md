@@ -4,7 +4,8 @@ Lecture slides (Beamer PDF) and [Quarto](https://quarto.org) source for the firs
 Master (M1) Econometrics course, **F. Candau** (E2S-UPPA / UPPA-TREE).
 
 The course runs in sequence: **OLS → Panel → Instrumental Variables / Shift-Share →
-Difference-in-Differences (canonical design, then staggered adoption).**
+Difference-in-Differences (canonical design, staggered adoption, then doses and on/off
+treatments).**
 
 ## Lectures
 
@@ -15,6 +16,7 @@ Difference-in-Differences (canonical design, then staggered adoption).**
 | 3 | Instrumental Variables & Shift-Share | [PDF](IV_Shift_Share/Lecture/IV_ShiftShare.pdf) | [.qmd](IV_Shift_Share/Lecture/IV_ShiftShare.qmd) |
 | 4 | Difference-in-Differences (I) — the canonical design | [PDF](DiD/Lecture/did.pdf) | [.qmd](DiD/Lecture/did.qmd) |
 | 5 | Difference-in-Differences (II) — staggered adoption | [PDF](DiD_staggered/Lecture/did_staggered.pdf) | [.qmd](DiD_staggered/Lecture/did_staggered.qmd) |
+| 6 | Difference-in-Differences (III) — beyond the switch: doses, on/off treatments | [PDF](DiD_advanced/Lecture/did_advanced.pdf) | [.qmd](DiD_advanced/Lecture/did_advanced.qmd) |
 
 ## Reproducing the slides
 

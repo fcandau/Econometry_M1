@@ -34,8 +34,8 @@ $$ \text{plim}\,\hat\beta_{OLS} = \beta + \frac{\Cov(x_i,\varepsilon_i)}{\Var(x_
 Where we are going today:
 
 1. **Instrumental variables** — the two conditions, the estimator, and diagnostics.
-2. **A detour: Generalized Method of Moments (GMM)** — for your culture, not your
-   toolkit.
+2. **Generalized Method of Moments (GMM)** — the framework behind 2SLS and behind the
+   shares view of shift-share.
 3. **The shift-share (Bartik) instrument** — what it is and how it is built.
 4. **Identification "from the shares"** — Goldsmith-Pinkham et al. (2020).
 5. **Identification "from the shifts"** — Borusyak et al. (2022).
@@ -116,11 +116,12 @@ Solving for $\beta$ gives the **IV estimator**:
 $$ \boxed{\;\hat\beta_{IV} = \frac{\Cov(z,y)}{\Cov(z,x)}\;} $$
 
 Intuition: scale the instrument's effect on the outcome by its effect on the
-treatment. If $z$ is binary, this is the **Wald estimator** — a ratio of
-differences in means.
+treatment. If $z$ is binary, this is the **Wald estimator**, a ratio of differences in
+means; the name is also used for the IV ratio computed on a single contrast, such as one
+pair of years.
 
-The numerator and denominator are each just **simple regressions on $z$** — they
-have names, which we introduce next.
+The numerator and denominator are each a **simple regression on $z$**: the **reduced
+form** ($y$ on $z$) and the **first stage** ($x$ on $z$). We study them next.
 
 ## First stage, reduced form, and the IV ratio
 
@@ -156,7 +157,8 @@ With controls $w_i$ and possibly several instruments, the same idea is implement
   $$ y_i = \beta\, \hat x_i + w_i\delta + \xi_i. $$
 
 With a single instrument this reproduces exactly $\hat\beta_{IV}=\hat\rho/\hat\pi$. In
-matrix form, with the projection $P_Z=Z(Z'Z)^{-1}Z'$ onto the instruments,
+matrix form, with $Z$ the $n\times L$ matrix of the $L$ instruments (controls partialled
+out) and $P_Z=Z(Z'Z)^{-1}Z'$ the projection onto them,
 $$ \hat\beta_{2SLS}=(X'P_Z X)^{-1}X'P_Z y \qquad (\text{stage 1 forms } \hat X=P_Z X). $$
 
 In practice, estimate 2SLS with a dedicated IV routine (Stata `ivreghdfe`; Python
@@ -164,8 +166,9 @@ In practice, estimate 2SLS with a dedicated IV routine (Stata `ivreghdfe`; Pytho
 
 ## What does IV estimate? LATE and compliers
 
-With **heterogeneous** effects $\beta_i$, IV recovers not the average effect but a *local*
-one — under one extra assumption:
+Take $z$ and $x$ **binary** ($z$ = an offer of the treatment). With **heterogeneous**
+effects $\beta_i$, IV recovers a *local* effect, not the average one, under one extra
+assumption:
 
 \begin{block}{Monotonicity (no defiers)}
 If the instrument affects treatment in one direction --- positively (or negatively) ---
@@ -204,7 +207,9 @@ $x=$ years of schooling, $y=$ wages. Candidate instruments: $z_1=$ distance to t
 college, $z_2=$ quarter of birth.
 \end{block}
 
-For each, argue **relevance** (testable) and **exclusion** (not) — never assumed:
+For each candidate, two questions: is it **relevant** (does it move schooling? testable
+in the first stage), and is it **excluded** (does it reach wages only through schooling?
+not testable, to be argued)?
 
 **$z_1$ (distance to college, Card 1995).** *Relevant?* proximity cuts the cost of
 attending $\Rightarrow$ more schooling (visible in the first stage). *Excluded?* it reaches
@@ -250,8 +255,9 @@ stated tolerance (e.g. 2SLS bias $\le 10\%$ of OLS bias); the threshold \emph{ri
 with the number of instruments.
 \end{block}
 
-- Under heteroskedasticity / clustering, use the **Kleibergen--Paap** $F$. ($F$ tests
-  **relevance**; the **Hansen $J$** test, later, tests **validity**.)
+- Under heteroskedasticity or clustering, use the **Kleibergen--Paap** $F$, the
+  first-stage $F$ with robust standard errors. $F$ tests **relevance**; Hansen's $J$
+  (later) tests **validity**.
 
 ## CIs that survive weak instruments: Anderson--Rubin
 
@@ -275,8 +281,8 @@ If $\beta_0$ is true, $y_i-\beta_0 x_i$ is exogenous, so $z$ has \textbf{no} pow
 
 ## What is a "moment"?
 
-Step back: *what kind* of estimator is IV? It is a **method of moments**. A **moment** is
-the expectation of a function of the data — the mean $\E[x]$, a covariance $\E[xy]$, etc.
+IV is a **method of moments**. A **moment** is the expectation of a function of the data:
+the mean $\E[x]$, a covariance $\E[xy]$.
 
 \begin{block}{The method of moments, in one line}
 A model implies that certain moments take known values. Replace the population
@@ -286,8 +292,8 @@ the parameters.
 
 **IV is exactly this.** Exogeneity is a population **moment condition**:
 $$ \E\!\left[z_i\,\varepsilon_i(\beta)\right]=0, \qquad \varepsilon_i(\beta)=y_i-\beta x_i $$
-("the instrument is uncorrelated with the error"). We estimate $\beta$ by making the
-**sample** version hold:
+("the instrument is uncorrelated with the error"; variables are demeaned, so the intercept
+is dropped). We estimate $\beta$ by making the **sample** version hold:
 $$ \frac1n\sum_i z_i\big(y_i-\beta x_i\big)=0
    \;\;\Longrightarrow\;\; \hat\beta_{IV}=\frac{\Cov(z,y)}{\Cov(z,x)}. $$
 One equation, one unknown $\beta$ — solved **exactly**.
@@ -311,19 +317,20 @@ test of validity)?
 
 ## The GMM estimator
 
-Stack the $L$ sample moments,
+Stack the $L$ sample moments, with $z_i=(z_{1i},\dots,z_{Li})'$,
 $$ \bar g(\beta)=\frac1n\sum_i z_i\big(y_i-\beta x_i\big), $$
 and choose $\beta$ to make them **jointly as close to zero as possible**, in the
 metric of a weight matrix $W$:
 $$ \boxed{\;\hat\beta_{GMM}=\arg\min_\beta\; \bar g(\beta)'\,W\,\bar g(\beta)\;} $$
 
-- $W$ decides **how much each moment counts**.
-- **2SLS is a special case**: GMM with $W=(Z'Z)^{-1}$ ($Z$ the $n\times L$ instrument
-  matrix) — **remember this, it is the bridge to Goldsmith-Pinkham et al.** *Efficient* (two-step) GMM
-  instead sets $W=\hat S^{-1}$, the inverse of the moments' covariance — smallest variance
-  under heteroskedasticity.
-- Over-identification also buys a **free specification test** of instrument validity
-  — Hansen's $J$ (next slide).
+- $W$ decides **how much each moment counts**. For these linear moments the minimiser
+  has a closed form: $\hat\beta_{GMM}=(x'ZWZ'x)^{-1}x'ZWZ'y$, with $Z$ the $n\times L$
+  instrument matrix.
+- **2SLS is the case $W=(Z'Z)^{-1}$.** The weight matrix is what will reconnect the
+  Bartik 2SLS to a GMM on the shares (shares view). *Efficient* (two-step) GMM sets
+  $W=\hat S^{-1}$, the inverse of the moments' covariance.
+- Over-identification also gives a **specification test** of instrument validity,
+  Hansen's $J$ (next slide).
 
 ## Are the instruments valid? The over-identification test
 
@@ -342,10 +349,10 @@ Sargan (homoskedastic) / Hansen (robust); dof $=L-1$ with one endogenous $x$.
 - A **joint**, low-power test: it won't say *which* fails, and a pass is **reassuring, not
   proof**.
 
-## Dynamic panels: the GMM you'll actually meet
+## Dynamic panels: GMM with lagged instruments
 
-The GMM you will really meet is **dynamic panel GMM** — used when a **lagged outcome**
-sits on the right-hand side:
+The most common GMM in applied work is **dynamic panel GMM**, used when a **lagged
+outcome** sits on the right-hand side:
 $$ y_{it}=\rho\,y_{i,t-1}+\beta x_{it}+f_i+u_{it}. $$
 
 - **Within breaks here** (Nickell 1981): sweeping out $f_i$ leaves $y_{i,t-1}$ correlated
@@ -357,7 +364,7 @@ $$ y_{it}=\rho\,y_{i,t-1}+\beta x_{it}+f_i+u_{it}. $$
 
 ## ...and why dynamic GMM is questionable
 
-\begin{alertblock}{Culture, not default}
+\begin{alertblock}{Not a default choice}
 In the \textbf{dynamic} case especially, GMM becomes a \textbf{black box}: fragile
 results, and diagnostics that can mislead.
 \end{alertblock}
@@ -365,8 +372,9 @@ results, and diagnostics that can mislead.
 - **Instruments proliferate** with $T$ $\Rightarrow$ it overfits $y_{i,t-1}$, drags
   $\hat\beta$ toward the biased within estimate, and inflates the Hansen $J$ toward
   $p\approx1$ — a meaningless "pass" (Roodman 2009).
-- **Researcher forks** (lag depth, collapse, one- vs two-step, Windmeijer SE) make a
-  result easy to *fish*.
+- **Researcher choices** (lag depth, "collapsing" the instrument set to fewer lags, one-
+  vs two-step, the Windmeijer correction of two-step standard errors) make a result easy
+  to *fish*.
 - **Weak** when $y$ is persistent: lagged levels barely move the differences.
 
 \small
@@ -381,8 +389,8 @@ variation we can see and defend.
 
 The binding constraint is almost never *relevance* — it is *exclusion*.
 
-- A valid instrument needs a credible story for why it touches $Y$ **only** through
-  $D$.
+- A valid instrument needs a credible argument for why it affects $y$ **only** through
+  $x$.
 - Natural experiments (lotteries, policy discontinuities, weather...) are scarce.
 
 \pause
@@ -615,17 +623,18 @@ The exposure shares $s_{ik}$ are uncorrelated with the unit-level unobservable
 $\varepsilon_i$ (conditional on controls).
 \end{alertblock}
 
-When outcomes are in changes, this is a **parallel-trends** condition, exactly as in
-difference-in-differences: absent the shock, exposed and unexposed units would have
-trended alike. The shift-share pools **many DiD comparisons**, one per share. Inference
-here relies on **many units** (large $N$).
+When outcomes are in changes, this is a **parallel-trends** condition: absent the shock,
+units with high and low exposure to $k$ would have moved alike (the identifying
+assumption of the difference-in-differences design, next chapter). A **pre-trend** test
+checks it on the years before the shock. The shift-share pools **many such comparisons**,
+one per share; inference relies on **many units** (large $N$).
 
-**Diagnostics (do these for the high-weight shares):**
+**Diagnostics, for the high-weight shares:**
 
-- correlate top-weight shares with observable confounders / baseline characteristics;
-- test for **pre-trends** in the top-weight share comparisons and in $z_i$ overall;
-- report **over-identification** tests and the spread of the $\hat\beta_k$;
-- use the `bartik_weight` package to compute the weights.
+- correlate them with observable confounders and baseline characteristics;
+- test for **pre-trends** in their comparisons and in $z_i$ overall;
+- report **over-identification** tests and the spread of the $\hat\beta_k$
+  (`bartik_weight` package).
 
 # Shifts view
 
@@ -650,10 +659,12 @@ Borusyak et al. show the shift-share IV is a **translation device**: the locatio
 estimator is numerically equal to a **shock-level IV regression** that uses $g_k$
 *directly* as the instrument.
 
-- Aggregate the outcome and treatment to the **shock level** using exposure weights
-  $\omega_k\propto\sum_i e_i\, s_{ik}$, **normalized so $\sum_k\omega_k=1$** ($e_i$ a unit
-  weight).
-- Run IV of the exposure-weighted $\bar y_k$ on $\bar x_k$, instrumenting with $g_k$.
+- Aggregate the outcome and treatment to the **shock level** with exposure weights:
+  $\bar y_k=\sum_i s_{ik}y_i\big/\sum_i s_{ik}$, likewise $\bar x_k$; the importance of
+  shock $k$ is $\omega_k=\sum_i s_{ik}\big/\sum_{k'}\sum_i s_{ik'}$, so that
+  $\sum_k\omega_k=1$.
+- Run the IV of $\bar y_k$ on $\bar x_k$, weighted by $\omega_k$, instrumenting with
+  $g_k$.
 
 The **same number** comes out — but now the assumption is stated on the **shocks**,
 and there are as many "observations" as there are **shocks $K$**, not units.
@@ -664,7 +675,8 @@ Because each shift carries an importance weight $\omega_k$, the **effective samp
 size** is governed by the concentration of those weights:
 
 \begin{block}{Effective number of shifts}
-$$ K_{\text{eff}} = \frac{1}{\sum_k \omega_k^{2}} = \frac{1}{\text{HHI of exposure weights}}. $$
+$$ K_{\text{eff}} = \frac{1}{\sum_k \omega_k^{2}}, \qquad
+   \sum_k \omega_k^{2} = \text{the Herfindahl index (HHI) of the exposure weights}. $$
 \end{block}
 
 - If a few sectors dominate exposure, $K_{\text{eff}}$ is **small** — the design rests
@@ -736,6 +748,21 @@ region — cluster your thinking (and SEs) accordingly.
 
 # Shares or shifts?
 
+## Which assumption fits your design?
+
+Ask yourself:
+
+1. **Can I defend a few shares as exogenous?** Are they *tailored* (they mediate only
+   the shock of interest, like origin-specific migrant shares)? $\to$ **shares view**.
+2. **Are my shares "generic"** (industry composition that proxies exposure to *many*
+   unobserved shocks)? Then share exogeneity is implausible $\to$ lean on **exogenous
+   shifts**.
+3. **Do I have many, plausibly-random shocks** with low exposure HHI? $\to$ **shifts
+   view** is available and powerful.
+
+In practice: report **both** sets of diagnostics, and always use **exposure-robust
+standard errors**.
+
 ## Two paths, one instrument
 
 \small
@@ -752,56 +779,158 @@ region — cluster your thinking (and SEs) accordingly.
 
 \normalsize
 
-## Which assumption fits your design?
-
-Ask yourself:
-
-1. **Can I defend a few shares as exogenous?** Are they *tailored* (they mediate only
-   the shock of interest, like origin-specific migrant shares)? $\to$ **shares view**.
-2. **Are my shares "generic"** (industry composition that proxies exposure to *many*
-   unobserved shocks)? Then share exogeneity is implausible $\to$ lean on **exogenous
-   shifts**.
-3. **Do I have many, plausibly-random shocks** with low exposure HHI? $\to$ **shifts
-   view** is available and powerful.
-
-In practice: report **both** sets of diagnostics, and always use **exposure-robust
-standard errors**.
-
 # Applied
 
-## Estimating a Bartik design in Python
+## Setting and data
+
+The applied session estimates how much an input bought by farms responds to the farm's
+revenue: $y$ is the log of input spending, $x$ the log of crop revenue, endogenous.
+
+- **Units and indices.** $i$ = farm, $c$ = crop (twelve crops), $t$ = year. The share
+  $s_{ic}$ is crop $c$'s part of the farm's crop revenue in its first two observed years;
+  the shift is the national price of crop $c$ in year $t$, $\log P_{ct}$.
+- **The instrument is a panel**, $z_{it}=\sum_c s_{ic}\log P_{ct}$, used with farm and
+  year fixed effects: within a farm it moves over time only because prices move.
+- **Objects in the code.** `df`: one row per farm and year, columns `id`, `annee`, `x`,
+  `y`, `prod_veg` (total crop output) and one revenue column per crop. `prix`: one row
+  per crop and year, columns `culture`, `annee`, `log_prix`. `crops`: the list of the
+  twelve crop columns.
 
 ```{python}
 #| eval: false
 #| echo: true
-import pyfixest as pf
-
-# 1. Instrument: z_i = sum_k s_ik * g_k (leave-one-out g)
-df["z"] = (shares * shifts).sum(axis=1)
-
-# 2. First stage - read its F (rule of thumb > 10)
-fs = pf.feols("x ~ z", data=df); fs.summary()
-
-# 3. 2SLS (region clustering is NOT valid here; see
-#    Inference - use exposure-robust / shock-level SEs)
-iv = pf.feols("y ~ 1 | x ~ z", data=df); iv.summary()
+import pandas as pd, pyfixest as pf
 ```
 
-- Read the **first-stage $F$** (recall Lee et al.: prefer **AR** when weak).
-- **Region clustering over-rejects** — use shock-level (`ssaggregate`) / **exposure-robust**
-  SEs (Adão et al.), and inspect **Rotemberg weights** (`bartik_weight`).
+## Build the two ingredients: shifts and shares
 
-## Takeaways
+Four lines turn a price file and the panel into the shifts $\log P_{ct}$ and the shares
+$s_{ic}$.
 
-- Shift-share = **common shocks $\times$ predetermined exposure**: a way to
-  manufacture an instrument where none is obvious.
-- The instrument has **two ingredients**; identification can rest on **either**:
-  - **shares** exogenous (Goldsmith-Pinkham et al.) — pools many DiD comparisons; read the
-    **Rotemberg weights**;
-  - **shifts** exogenous (Borusyak et al.) — many quasi-random shocks; mind $K_{\text{eff}}$.
-- **Inference is special**: shared exposure correlates residuals — use
-  **exposure-robust standard errors** (Adão et al. / shock-level).
-- Match the **story** to the **assumption**, and **diagnose** the one you rely on.
+```{python}
+#| eval: false
+#| echo: true
+lp = prix.pivot(index="annee", columns="culture",
+                values="log_prix")                          # 1
+base = df.groupby("id").head(2)                             # 2
+tot = base.groupby("id")[crops + ["prod_veg"]].sum()        # 3
+shares = tot[crops].div(tot["prod_veg"], axis=0)            # 4
+```
+
+\small
+
+- **1** — the shifts as a table with one row per year and one column per crop: `pivot`
+  reshapes the long price file into that grid. `lp.loc[2007, "colza"]` is a price.
+- **2** — the **first two rows** of each farm, its two earliest years: the shares must be
+  measured before the shocks they will be combined with.
+- **3** — sums, over those two years, the revenue of each crop and total output.
+- **4** — divides each crop's revenue by total output, row by row (`axis=0`): the share
+  of each crop in the farm's output, one row per farm, one column per crop.
+
+## Combine them into the instrument $z_{it}$
+
+Five lines attach the shares to every year of the farm and sum shares times prices.
+
+```{python}
+#| eval: false
+#| echo: true
+pan = df.merge(shares, left_on="id", right_index=True)      # 1
+pan["z"] = 0.0                                              # 2
+for c in crops:                                             # 3
+    pan[f"z_{c}"] = pan[c] * lp.loc[pan["annee"], c].values # 4
+    pan["z"] += pan[f"z_{c}"]                               # 5
+```
+
+\small
+
+- **1** — joins the shares to the panel: `df` has a column `id`, `shares` has the farm
+  as its row index, so each farm's twelve shares are copied onto all of its rows.
+- **2** — starts the instrument at zero.
+- **3**, **4** — for each crop, the contribution share $\times$ log price is stored in a
+  column `z_<crop>`, used later for the Rotemberg weights. `pan[c]` is the farm's share
+  of crop `c`; `lp.loc[pan["annee"], c]` picks, for each row, the price of `c` in that
+  row's year; `.values` drops the index so that the two line up row by row.
+- **5** — adds it to `z`. After the loop, `z` is $\sum_c s_{ic}\log P_{ct}$.
+
+## First stage, reduced form, 2SLS
+
+Four lines estimate the three regressions of the chapter and the first-stage $F$.
+
+```{python}
+#| eval: false
+#| echo: true
+cl = {"CRV1": "id"}
+fs = pf.feols("x ~ z | id + annee", pan, vcov=cl)           # 1
+rf = pf.feols("y ~ z | id + annee", pan, vcov=cl)           # 2
+iv = pf.feols("y ~ 1 | id + annee | x ~ z", pan, vcov=cl)   # 3
+F  = (fs.coef()["z"] / fs.se()["z"]) ** 2                   # 4
+```
+
+\small
+
+- **1** — the first stage: the endogenous regressor on the instrument, farm and year
+  fixed effects absorbed. Its coefficient is $\hat\pi$.
+- **2** — the reduced form: the outcome on the instrument. Its coefficient is $\hat\rho$.
+- **3** — 2SLS in one call. The formula has **three parts** separated by `|`: the
+  outcome and its exogenous regressors (`1` means none besides the fixed effects), the
+  fixed effects, then `endogenous ~ instrument`. The coefficient on `x` is $\hat\rho/\hat\pi$.
+- **4** — with one instrument, the first-stage $F$ is the square of its $t$.
+- `cl` — standard errors clustered by farm; the exposure-robust errors of the inference
+  section are not available in pyfixest.
+- To test an elasticity of 1 rather than 0: `(iv.coef()["x"] - 1) / iv.se()["x"]`.
+
+## One shock at a time: the Wald estimator
+
+Four lines compute the ratio of two differences on a single pair of years.
+
+```{python}
+#| eval: false
+#| echo: true
+w = pan[pan["annee"].isin([2006, 2007])]                    # 1
+w = w.pivot(index="id", columns="annee",
+            values=["y", "x", "z"]).dropna()                # 2
+d = pd.DataFrame({"dy": w["y"][2007] - w["y"][2006],
+                  "dx": w["x"][2007] - w["x"][2006],
+                  "dz": w["z"][2007] - w["z"][2006]})       # 3
+wald = pf.feols("dy ~ dz", d).coef()["dz"] \
+     / pf.feols("dx ~ dz", d).coef()["dz"]                  # 4
+```
+
+\small
+
+- **1** — the two years around the shock.
+- **2** — one row per farm, one column per year and variable; a farm missing a year
+  gets a gap, dropped with `.dropna()`.
+- **3** — the change of each variable between the two years, for each farm.
+- **4** — reduced form over first stage on those changes: the Wald estimator, identical
+  to 2SLS with one instrument. Its first-stage $F$ tells whether the shock spread farms
+  enough.
+
+## Which crops carry the estimate, and a placebo
+
+Five lines compute the Rotemberg weights and build the placebo, next year's instrument.
+
+```{python}
+#| eval: false
+#| echo: true
+def r(v): return pf.feols(f"{v} ~ 1|id + annee", pan).resid() # 1
+xt = r("x")                                                   # 2
+num = {c: r(f"z_{c}") @ xt for c in crops}                    # 3
+alpha = {c: num[c] / sum(num.values()) for c in crops}        # 4
+pan["z_lead"] = pan.groupby("id")["z"].shift(-1)              # 5
+```
+
+\small
+
+- **1** — a function that regresses a variable on the fixed effects only and returns the
+  residuals: the variable **net of** farm and year effects. **2** applies it to `x`.
+- **3** — for each crop, the covariance between its contribution to the instrument,
+  `z_c` $= s_{ic}\log P_{ct}$, and `x`; `@` is the dot product of two vectors.
+- **4** — each covariance over their sum: the Rotemberg weight $\alpha_c$. They sum to
+  one; a negative one is possible.
+- **5** — `z` on the **next row of the same farm**, `shift(-1)` moving values up one row
+  inside each farm: next year's prices. Added to the reduced form, a significant
+  coefficient would mean farms react to prices before they occur.
 
 ## References {.allowframebreaks}
 
