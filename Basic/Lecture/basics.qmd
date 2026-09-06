@@ -137,13 +137,13 @@ We can already *compute* $\hat\beta$. The rest of the lecture asks four question
 | log–log | $\ln y=\beta_0+\beta_1\ln x$ | $+1\%$ | $\beta_1\,\%$ (elasticity) |
 
 \normalsize
-For small $\beta_1$ these collapse to the familiar approximations (e.g. log–level
-$\approx 100\beta_1\%$); the exact forms matter only when $\beta_1$ is sizeable.
+For the log–level line, when $\beta_1$ is small,
+$100\,(e^{\beta_1}-1)\,\% \approx 100\,\beta_1\,\%$.
 
 ## Example: the gender wage gap
 
 $$ \ln(\text{wage}_i) = \beta_0 + \beta_1\,\text{woman}_i + \varepsilon_i, \qquad
-   \hat\beta_1 \approx -0.285. $$
+   \hat\beta_1 = -0.285. $$
 
 Women earn on average $\approx \mathbf{24.8\%}$ less than men (INSEE, 2017). For a log
 outcome with a **dummy** regressor, use the exact effect:
@@ -153,7 +153,7 @@ $$ e^{\hat\beta_1}-1 = e^{-0.285}-1 = -0.248 = -24.8\%. $$
 
 Add controls — education, experience, hours, occupation, sector:
 $$ \ln(\text{wage}_i)=\beta_0+\beta_1\,\text{woman}_i+\beta_2\,\text{educ}_i+\dots+\varepsilon_i,
-   \qquad \hat\beta_1\approx -0.10. $$
+   \qquad \hat\beta_1 = -0.10. $$
 
 - **"All else equal,"** women earn $\approx \mathbf{9.5\%}$ less — exactly
   $e^{-0.10}-1=-0.095$. The gap shrinks once we hold **observables** fixed, but only
@@ -182,12 +182,29 @@ unbiased in the first place (\textbf{assumptions}, after)?
 
 \begin{center}
 \begin{tikzpicture}
-\begin{axis}[width=9.2cm,height=3.5cm, axis y line=none, axis x line=bottom,
+\begin{axis}[width=9.2cm,height=3.9cm, axis y line=none, axis x line=bottom,
   xtick={0}, xticklabels={$\beta$}, domain=-3.5:3.5, samples=90,
   enlarge x limits=false, clip=false]
+\node[font=\scriptsize, text=black!55, anchor=north east] at (axis cs:3.5,-0.06) {$\hat\beta$ across samples};
 \addplot[draw=bordeaux, thick, fill=bordeaux!12] {exp(-x^2/2)} \closedcycle;
 \draw[dashed] (axis cs:0,0) -- (axis cs:0,1);
-\filldraw[bordeaux] (axis cs:0.9,0) circle (1.3pt) node[below=1pt,font=\scriptsize]{$\hat\beta$};
+% spread of the curve = standard error
+\draw[<->, >=Latex, black!55, thick] (axis cs:0,0.607) -- (axis cs:1,0.607)
+  node[midway, above=1pt, font=\scriptsize, text=black!55] {$\text{se}(\hat\beta)$};
+% other samples (grey) and our sample (bordeaux)
+\filldraw[black!55] (axis cs:-1.6,0) circle (0.9pt) (axis cs:-0.7,0) circle (0.9pt)
+  (axis cs:-0.3,0) circle (0.9pt) (axis cs:0.4,0) circle (0.9pt)
+  (axis cs:1.3,0) circle (0.9pt) (axis cs:2.1,0) circle (0.9pt);
+\filldraw[bordeaux] (axis cs:0.9,0) circle (1.4pt) node[below=1pt,font=\scriptsize]{$\hat\beta$};
+% where the randomness comes from
+\draw[->, >=Latex, black!55] (axis cs:-2.05,0.62) -- (axis cs:-1.34,0.46);
+\node[font=\scriptsize, anchor=south east, align=right] at (axis cs:-1.95,0.60)
+  {$\hat\beta_1=\beta_1+\sum_i w_i\,\varepsilon_i$, \ $w_i=\dfrac{x_i-\bar x}{\sum_j (x_j-\bar x)^2}$\\[2pt]
+   the randomness of $\hat\beta$ is that of the errors};
+% sampling error of our sample
+\draw[decorate, decoration={brace, mirror, amplitude=3pt}, thick]
+  (axis cs:0,-0.34) -- (axis cs:0.9,-0.34)
+  node[midway, below=3pt, font=\scriptsize] {$\hat\beta-\beta$ : sampling error};
 \end{axis}
 \end{tikzpicture}
 \end{center}
@@ -237,11 +254,8 @@ $$ t=\frac{\hat\beta_k-\beta_k^0}{\widehat{\text{se}}(\hat\beta_k)}
 - So $t$ is the estimate in **se units**: $t=2$ means $\hat\beta_k$ sits two standard
   errors from $0$. A **large $|t|$** $\Rightarrow$ $\hat\beta_k$ is far from $0$ relative
   to its noise $\Rightarrow$ implausible if the true $\beta_k$ were $0$.
-- Under the assumptions (normal errors), $t$ follows **Student's $t$ with $n-k-1$
-  degrees of freedom**, which $\to \mathcal N(0,1)$ as $n$ grows.
-- **Why $t$, not the normal?** Because we *estimate* $\sigma^2$ inside
-  $\widehat{\text{se}}$; that extra uncertainty **fattens the tails** in small samples —
-  Gosset's discovery.
+- From how many standard errors away is the gap judged implausible under $H_0$? That is
+  the next slide, and its **1.96**!
 
 ## Reading the $t$: critical values and rejection
 
