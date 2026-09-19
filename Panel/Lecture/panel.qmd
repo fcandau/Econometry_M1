@@ -29,10 +29,10 @@ Higher dimensions are common:
 - exports between $i$ and $j$, at time $t$, for product $k$;
 - wages of workers $i$ in sectors $k$, cities $c$, over years $t$.
 
-## The first problem: what the error hides
+## Unobserved heterogeneity and omitted-variable bias
 
-We want the causal effect $\beta$ of $x_{it}$ on $y_{it}$. Run a naive regression and
-everything we cannot measure lands in the error:
+We want the causal effect $\beta$ of $x_{it}$ on $y_{it}$. In a regression without
+controls, every unmeasured determinant of $y_{it}$ is in the error:
 $$ y_{it}=\alpha+\beta x_{it}+\varepsilon_{it}, \qquad
    \varepsilon_{it}=\underbrace{f_i}_{\text{individual}}+\underbrace{f_t}_{\text{time}}+u_{it}. $$
 
@@ -40,32 +40,31 @@ $$ y_{it}=\alpha+\beta x_{it}+\varepsilon_{it}, \qquad
   geography... fixed over time, differing across units.
 - $f_t$ — **time** effect: shocks hitting **all** units in period $t$ (crises, world
   prices, technology).
-- If $f_i$ or $f_t$ correlates with $x_{it}$, OLS is **biased** (omitted-variable bias).
+- If $f_i$ or $f_t$ is correlated with $x_{it}$, then $\E[\varepsilon_{it}\mid x_{it}]\neq 0$:
+  $x_{it}$ is **endogenous** and OLS is **biased** (omitted-variable bias).
 
-\begin{alertblock}{The promise of panel data}
-Observing the \emph{same} units over \emph{several} periods lets us \textbf{sweep $f_i$
-and $f_t$ out of the error} --- identifying $\beta$ even when they correlate with $x$.
+\begin{alertblock}{Objective}
+Observing the \emph{same} units over \emph{several} periods allows us to \textbf{remove
+$f_i$ and $f_t$ from the error}, and to identify $\beta$ even when they are correlated
+with $x$.
 \end{alertblock}
 
-## The second problem: errors that move together
+## Correlated errors and inference
 
-Problem 1 in one line: $\hat\beta=(X'X)^{-1}X'y$ is biased when $\E[\varepsilon\mid X]\neq 0$,
-and $\varepsilon$ contains $f_i+f_t$. Sections 1–3 remove them by **transforming the data**
-before running OLS.
+The error term has a second problem, on the standard errors (the significance of the
+coefficients).
 
-A second problem sits in the same error. Take one unit in two periods $s$ and $t$:
-$$ \begin{aligned}
-   \varepsilon_{is}&=f_i+f_s+u_{is}, \qquad \varepsilon_{it}=f_i+f_t+u_{it}\\
-   \Cov(\varepsilon_{is},\varepsilon_{it})&=\Var(f_i)+\Cov(u_{is},u_{it})\neq 0.
-   \end{aligned} $$
-
-- The errors of the **same unit are correlated** across its periods. This does not bias
-  $\hat\beta$; it changes its **variance**,
-  $$ \Var(\hat\beta)=(X'X)^{-1}\,X'\Omega X\,(X'X)^{-1},\qquad
-     \Omega=\E[\varepsilon\varepsilon'\mid X]. $$
-- Default software assumes $\Omega=\sigma^2 I$, independent errors. Here that is false,
-  and the printed standard errors are **too small**.
-- The section *Clustered standard errors* gives the correct $\Omega$.
+- In a panel, two observations can share a component of the error, and their errors are
+  then correlated. Two observations of the **same unit** share $f_i$, so the errors of a
+  unit may be correlated over time — **autocorrelation**. Two observations of the **same
+  period** share $f_t$, so the errors of different units may be correlated within a
+  period — **cross-sectional correlation**.
+- The observations are then **not independent draws**, and the usual variance formula no
+  longer applies.
+- With correlated errors the estimated variance is **biased**, and in the usual case of
+  positive correlation it is **understated**. Standard errors are too small, $t$ too
+  large, and the test **rejects too often**.
+- The section *Clustered standard errors* gives the correction.
 
 ## Balanced vs. unbalanced panels
 
@@ -77,7 +76,7 @@ $$ \begin{aligned}
 \begin{block}{Why it matters}
 A couple of results below — notably that the \textbf{between} estimator removes the time
 effect — hold cleanly \textbf{only for balanced panels}. Real data are often unbalanced;
-we flag where it bites.
+we indicate where this matters.
 \end{block}
 
 ## Roadmap
@@ -107,14 +106,15 @@ $$ y_{it}=\alpha+\beta x_{it}+\varepsilon_{it}, \qquad \varepsilon_{it}=f_i+f_t+
 - **Consistent only if** $\Cov(x_{it},f_i)=0$ **and** $\Cov(x_{it},f_t)=0$ — usually
   too strong.
 - $\varepsilon_{it}$ shares $f_i$ across all periods, so a unit's errors are
-  **correlated with each other**: the second problem, treated in the section
+  **correlated with each other** (autocorrelation), treated in the section
   *Clustered standard errors*.
 
-\begin{alertblock}{The bias, exactly}
+\begin{alertblock}{The bias}
 With a single regressor and exogenous idiosyncratic error ($\Cov(x_{it},u_{it})=0$),
 $\operatorname{plim}\hat\beta_{\text{pooled}}
-=\beta+\dfrac{\Cov(x_{it},\,f_i+f_t)}{\Var(x_{it})}$ --- nonzero the moment $x$ moves
-with \emph{either} unobserved effect. The transformations below kill that covariance.
+=\beta+\dfrac{\Cov(x_{it},\,f_i+f_t)}{\Var(x_{it})}$, nonzero as soon as $x$ is
+correlated with \emph{either} unobserved effect. The transformations below remove that
+covariance.
 \end{alertblock}
 
 ## The between estimator
@@ -124,83 +124,37 @@ data points, one per unit) with error $\bar\varepsilon_i$:
 $$ \bar y_i=\alpha+\beta\,\bar x_i+\bar\varepsilon_i, \qquad
    \hat\beta_B=\frac{\sum_i(\bar x_i-\bar x)(\bar y_i-\bar y)}{\sum_i(\bar x_i-\bar x)^2}. $$
 
-What sits in that error? Average the true model over $t$ ($f_i$ is constant, so it
+To find this error, average the true model over $t$ ($f_i$ is constant, so it
 stays). In a **balanced panel** the time effects average to the same grand mean for
 every unit:
 $$ \bar\varepsilon_i=f_i+\bar f+\bar u_i, \qquad \bar f=\tfrac1T\textstyle\sum_t f_t. $$
 
 - That $\bar f$ is the **same for all units** → a constant the intercept absorbs:
-  **between sweeps out $f_t$** (its quiet advantage).
+  **between removes $f_t$**.
 - $f_i$ is **still in the error** → **biased if** $\Cov(\bar x_i,f_i)\neq 0$.
-- Uses **only between** variation; a benchmark, rarely final. *(Unbalanced panel: the
-  average differs across units and need not wash out.)*
-
-## What does each estimator remove from the error?
-
-The error hides two unobserved effects, $f_i$ and $f_t$. Each estimator is OLS on
-transformed data, and the transformation decides **which effect leaves the error**:
-
-\begin{center}
-\begin{tabular}{llccl}
-\toprule
- & data fed to OLS & removes $f_i$? & removes $f_t$? & left biased by\\
-\midrule
-Pooled  & raw rows $x_{it}$ & no  & no  & $f_i$ and $f_t$\\
-Between & unit means $\bar x_i$ & no  & yes & $f_i$\\
-Within  & $x_{it}-\bar x_i$ & yes & no  & $f_t$\\
-TWFE    & $x_{it}-\bar x_i-\bar x_t+\bar x$ & yes & yes & ---\\
-\bottomrule
-\end{tabular}
-\end{center}
-
-- **Between** averages over time $\to$ kills $f_t$, keeps $f_i$.
-- **Within** demeans within units $\to$ kills $f_i$, keeps $f_t$ (next).
-- **TWFE** does **both** — the destination of this lecture.
-
-\footnotesize
-*Between removes $f_t$ only in a **balanced** panel; "Within keeps $f_t$" means in
-demeaned form, $f_t-\bar f$.*
+- Uses **only between** variation; a benchmark, rarely the final estimate.
+  *(Unbalanced panel: the average differs across units and does not cancel.)*
 
 # Fixed effects
 
 ## The within transformation
 
-Subtract each unit's time-average from the model:
+Start from the model with both effects,
+$$ y_{it}=\alpha+\beta x_{it}+f_i+f_t+u_{it}, $$
+and subtract each unit's time-average ($\bar f=\tfrac1T\sum_t f_t$):
 $$ y_{it}-\bar y_i=\beta\,(x_{it}-\bar x_i)+(f_t-\bar f)+(u_{it}-\bar u_i). $$
 
 \begin{alertblock}{$f_i$ cancels --- but $f_t$ does not}
-$f_i$ is constant over $t$, so demeaning subtracts it from itself ($f_i-f_i=0$): the
-individual effect \textbf{disappears}, and $\hat\beta_{\text{within}}$ is consistent even
-if $\Cov(x_{it},f_i)\neq 0$. But the time effect leaves $f_t-\bar f\neq 0$ in the equation.
+$f_i$ is constant over $t$, so demeaning subtracts it from itself ($f_i-f_i=0$) and it
+\textbf{disappears}. $\hat\beta_{\text{within}}$ is consistent even if
+$\Cov(x_{it},f_i)\neq 0$, but the time effect leaves $f_t-\bar f\neq 0$.
 \end{alertblock}
 
 - OLS on the demeaned data **is** the **within / fixed-effects** estimator,
   $$ \hat\beta_W=\frac{\sum_i\sum_t (x_{it}-\bar x_i)(y_{it}-\bar y_i)}
      {\sum_i\sum_t (x_{it}-\bar x_i)^2}, $$
   identified purely from **within-unit variation over time**.
-- A common time shock can **still bias** it $\Rightarrow$ we add **time effects** (TWFE)
-  next.
-
-## Within and between: one variance, split in two
-
-The two estimators are not rivals — they read **two halves of the same variance**. For a
-balanced panel, the total variation in $x$ decomposes **exactly**:
-$$ \underbrace{\sum_{it}(x_{it}-\bar x)^2}_{\text{total}}
- =\underbrace{\sum_{it}(x_{it}-\bar x_i)^2}_{\text{within (over time)}}
- +\underbrace{T\sum_i(\bar x_i-\bar x)^2}_{\text{between (across units)}}. $$
-
-- **Within** uses only the first piece, **between** only the second — same data, two
-  different questions.
-- Pooled OLS uses **both**: it is the variance-weighted average
-  $$ \hat\beta_{\text{pooled}}=w\,\hat\beta_W+(1-w)\,\hat\beta_B, \qquad
-     w=\frac{S_W}{S_W+S_B}, $$
-  with $S_W=\sum_{it}(x_{it}-\bar x_i)^2$ and $S_B=T\sum_i(\bar x_i-\bar x)^2$ (the two
-  pieces above — keep the $T$).
-- **The price of within:** discarding the between piece $\Rightarrow$ **larger standard
-  errors**. Consistency is not free.
-
-\footnotesize
-*Balanced panel shown; unbalanced replaces $T$ by $T_i$ and weights accordingly.*
+- A common time shock **still biases** it $\Rightarrow$ **TWFE** (next section).
 
 ## Equivalence: least-squares dummy variables (LSDV)
 
@@ -230,8 +184,8 @@ unit at its own evolution over time.
 
 ## Frisch–Waugh–Lovell: within $=$ partialling out $f_i$
 
-Why are "demean" and "$N$ dummies" the same answer? Collect the unit dummies in a matrix
-$D$ and define the **residual-maker**
+Demeaning and $N$ dummies give the same $\hat\beta$. To see it, collect the unit dummies
+in a matrix $D$ and define the **residual-maker**
 $$ M_D=I-D(D'D)^{-1}D'. $$
 
 - $M_D$ is symmetric and idempotent\footnote{Idempotent: applying it twice equals
@@ -243,7 +197,27 @@ $$ M_D=I-D(D'D)^{-1}D'. $$
 - So we never invert the huge $N\times N$ dummy block — we demean and run OLS on $k$
   columns. This is exactly what `feols`/`reghdfe` do internally.
 
-## What within can — and cannot — do
+## Decomposition of the variance: within and between
+
+Within and between use **two parts of the same variance**. For a balanced panel, the
+total variation in $x$ decomposes **exactly**:
+$$ \underbrace{\sum_{it}(x_{it}-\bar x)^2}_{\text{total}}
+ =\underbrace{\sum_{it}(x_{it}-\bar x_i)^2}_{\text{within (over time)}}
+ +\underbrace{T\sum_i(\bar x_i-\bar x)^2}_{\text{between (across units)}}. $$
+
+- **Within** uses only the first piece, **between** only the second.
+- Pooled OLS uses **both**: it is the variance-weighted average
+  $$ \hat\beta_{\text{pooled}}=w\,\hat\beta_W+(1-w)\,\hat\beta_B, \qquad
+     w=\frac{S_W}{S_W+S_B}, $$
+  with $S_W=\sum_{it}(x_{it}-\bar x_i)^2$ and $S_B=T\sum_i(\bar x_i-\bar x)^2$ (the two
+  pieces above — keep the $T$).
+- **Precision:** the within estimator discards the between piece $\Rightarrow$ **larger
+  standard errors** than pooled OLS.
+
+\footnotesize
+*Balanced panel shown; unbalanced replaces $T$ by $T_i$ and weights accordingly.*
+
+## Assumption and limits of the within estimator
 
 \begin{block}{Strict exogeneity (the key assumption)}
 $\E[u_{it}\mid x_{i1},\dots,x_{iT},f_i]=0$: the shock is uncorrelated with \emph{past,
@@ -272,84 +246,165 @@ $y$) — FWL with both dummy sets:
 $$ \hat\beta_{TWFE}=\frac{\sum_{it}\ddot x_{it}\,\ddot y_{it}}{\sum_{it}\ddot x_{it}^{\,2}}. $$
 
 - Absorbs time-invariant **unit** heterogeneity **and** unit-invariant **time** shocks.
-- Stricter control of confounders → the **workhorse** of applied micro and the basis of
-  difference-in-differences.
+- Stricter control of confounders → the **standard estimator** of applied
+  microeconomics and the basis of difference-in-differences.
 - Identified only if $\ddot x_{it}$ still **varies** (not collinear with the time
-  dummies) — else the denominator collapses.
+  dummies); otherwise the denominator is zero.
+
+## Summary of the four estimators
+
+The error contains two unobserved effects, $f_i$ and $f_t$. The four estimators are OLS
+on transformed data, and the transformation determines **which effect is removed from
+the error**:
+
+\begin{center}
+\begin{tabular}{llccl}
+\toprule
+ & data fed to OLS & removes $f_i$? & removes $f_t$? & left biased by\\
+\midrule
+Pooled  & raw rows $x_{it}$ & no  & no  & $f_i$ and $f_t$\\
+Between & unit means $\bar x_i$ & no  & yes & $f_i$\\
+Within  & $x_{it}-\bar x_i$ & yes & no  & $f_t$\\
+TWFE    & $x_{it}-\bar x_i-\bar x_t+\bar x$ & yes & yes & ---\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+- **Between** averages over time $\to$ removes $f_t$, keeps $f_i$.
+- **Within** demeans within units $\to$ removes $f_i$, keeps $f_t$.
+- **TWFE** demeans in both dimensions $\to$ removes **both**.
+
+\footnotesize
+*Between removes $f_t$ only in a **balanced** panel; "Within keeps $f_t$" means in
+demeaned form, $f_t-\bar f$.*
 
 # Clustered standard errors
 
-## The variance of FE estimators: where inference enters
+## What is left in the error after the fixed effects
 
-The first problem is settled: within and TWFE remove the effects from the error. The
-second remains: **what is $\Omega$?** By FWL any FE estimator is OLS on
-$M_D$-residualized data, so we just **replace $X$ by $M_DX$** in the variance formula of
-the second-problem slide:
+After within or TWFE, $f_i$ and $f_t$ are no longer in the error, which is $u_{it}$. What
+remains to be treated is the correlation of $u_{it}$ between observations. Two pairs
+matter,
+$$ \begin{aligned}
+   \Cov(u_{is},u_{it})&\neq 0 && \text{same unit } i,\ \text{two periods } s\neq t\\
+   \Cov(u_{it},u_{jt})&\neq 0 && \text{two units } i\neq j,\ \text{same period } t
+   \end{aligned} $$
+
+- **Autocorrelation** (first line). A shock to a farm, a firm or a country persists over
+  the following years. $u_{it}=\rho\,u_{i,t-1}+e_{it}$ with $\rho>0$ is the usual case.
+- **Cross-sectional correlation** (second line). What is left of a common shock after the
+  time effect — a regional drought, a sector price. A shock common to *all* units is
+  already in $f_t$.
+- Clustering by unit allows any correlation of the first kind and assumes the second is
+  zero. The application treats the second (Dell et al.).
+
+\footnotesize
+*If $f_i$ and $f_t$ are kept in the error instead of being removed, they add $\Var(f_i)$
+to the first covariance and $\Var(f_t)$ to the second — the random-effects model.*
+
+## The variance of fixed-effects estimators
+
+The variance of $\hat\beta$ depends on the whole covariance matrix of the errors,
+$\Omega=\E[\varepsilon\varepsilon'\mid X]$. By FWL any FE estimator is OLS on
+$M_D$-residualized data, so **$X$ is replaced by $M_DX$** in the usual sandwich formula:
 $$ \Var(\hat\beta_{\text{FE}})=(X'M_DX)^{-1}\big(X'M_D\,\Omega\,M_DX\big)(X'M_DX)^{-1}, $$
-where $M_D$ sweeps out the fixed effects — unit dummies for within, **both** sets for TWFE.
+where $M_D$ is the residual-maker defined on the Frisch–Waugh–Lovell slide, built from
+the dummies of the fixed effects.
 
-- If $\Omega=\sigma^2 I$ this collapses to the textbook $\sigma^2(X'M_DX)^{-1}$ — what
-  default software prints.
-- But within a unit the shocks $u_{it}$ are **serially correlated**, so $\Omega$ is
-  **not** scalar and that textbook formula **understates** the true variance.
-- The honest fix is to model $\Omega$ as block-diagonal by unit — **clustered standard
+- If $\Omega=\sigma^2 I$, this reduces to the classical formula $\sigma^2(X'M_DX)^{-1}$.
+- But with **autocorrelated** errors $\Omega$ is **not** scalar and the classical formula
+  does not hold. It **understates** the true variance.
+- The correction is to model $\Omega$ as block-diagonal by unit — **clustered standard
   errors**, the rest of this section.
 
-## Why i.i.d. standard errors fail
+## Cluster-robust standard errors
 
-Default software sets $\Omega=\sigma^2 I$ — **all errors independent**, equal variance.
-The previous slide showed why that breaks; here is the intuition:
+One solution is to cluster the errors. Clustering allows **any** correlation *within* a
+cluster (a unit across its years) and imposes independence *across* clusters, so
+$\Omega$ is **block-diagonal**, one block $\Omega_g$ per cluster:
+$$ \Omega=\begin{pmatrix}
+   \Omega_1 & & 0\\
+    & \ddots & \\
+   0 & & \Omega_G
+   \end{pmatrix} $$
 
-- A unit's shocks **persist** across its years, so its own observations are **not**
-  independent — the off-diagonal of $\Omega$ is nonzero.
-- *Analogy:* counting 200 students who copied off 3 as 200 independent answers — you
-  *think* you have 200 observations; you have a handful.
-- Consequence: SEs **too small** $\Rightarrow$ $t$-stats inflated $\Rightarrow$ you
-  **over-reject** (the stars lie).
+The **zeros outside** the blocks assume independence **between clusters**. Correlation is
+free *inside* a cluster and zero *between* two clusters.
 
-## Clustering: count blocks, not observations
+For a unit observed in three periods, its block is $3\times 3$,
 
-Allow **any** correlation *within* a cluster (a unit across its years) but independence
-*across* clusters $\Rightarrow$ $\Omega$ is **block-diagonal**, and
-$$ X'\Omega X=\sum_{g=1}^{G} X_g'\,\Omega_g\,X_g. $$
+\begin{center}\small
+$\Omega_1=\begin{pmatrix}
+\Var(u_{11}) & \Cov(u_{11},u_{12}) & \Cov(u_{11},u_{13})\\
+\Cov(u_{12},u_{11}) & \Var(u_{12}) & \Cov(u_{12},u_{13})\\
+\Cov(u_{13},u_{11}) & \Cov(u_{13},u_{12}) & \Var(u_{13})
+\end{pmatrix}$
+\end{center}
 
-- The **cluster-robust** estimator replaces each block by the residual outer product
-  (Liang–Zeger); consistent as the **number of clusters $G\to\infty$** — *not* as the
-  periods per unit grow.
-- So **effective information $=$ number of clusters $G$, not $NT$.**
-- **Moulton factor:** if the regressor varies at the cluster level, the ratio of the
-  true to the naïve variance is $1+(\bar n-1)\rho$, where $\bar n$ is the **cluster size**
-  (observations per cluster) and $\rho$ the **within-cluster correlation** of the errors.
-  With $\bar n=50,\ \rho=0.1$: the right SE is $\sqrt6\approx2.5\times$ the naïve one.
+Its diagonal holds the variances, its off-diagonal the **autocorrelations**. The six
+numbers are left **free** — no AR(1), no equal variances.
 
-## Where — and how many — to cluster
+## The cluster-robust estimator
+
+The numbers inside a block are true variances and covariances, **but** we only have
+residuals. Liang–Zeger (1986) give an estimator that uses only the residuals of each
+cluster and is reliable when the clusters are **numerous** (formula in the appendix).
+
+\begin{alertblock}{Effective sample size}
+The precision of a clustered standard error depends on the number of clusters $G$, not on
+the $NT$ rows of the data.
+\end{alertblock}
+
+*Example.* 200 people interviewed, 20 in each of 10 villages. If the people of a village
+share the same local shock, the sample carries about 10 independent observations, not
+200.
+
+## The Moulton problem (Moulton, 1990)
+
+The problem arises when the regressor is defined at a **coarser level** than the outcome.
+With units $i$ observed at $t$ and a regressor defined for the region or sector $g(i)$
+that contains unit $i$,
+$$ y_{it}=\alpha+\beta\,x_{g(i)t}+\varepsilon_{it}, $$
+$x$ takes the same value for every unit of the region or sector (a regional tax, a sector
+price), while $y_{it}$ varies unit by unit.
+
+- The errors of the units of one region or sector share its shock. With clusters of size
+  $\bar n$ and an intraclass correlation $\rho$ of the errors, the true variance of
+  $\hat\beta$ exceeds the one OLS prints by the **Moulton factor**
+  $$ \frac{\Var(\hat\beta)_{\text{true}}}{\Var(\hat\beta)_{\text{naive}}}=1+(\bar n-1)\rho. $$
+- The factor grows with the **size of the clusters**. Adding units inside a region or
+  sector raises it instead of improving precision. Cluster at the level where the
+  regressor varies.
+
+## Level and number of clusters
 
 - **Cluster at the level of treatment assignment** (or wherever residuals stay
   correlated). With repeated observations per unit, cluster **by the unit**, not
   unit–year — the errors are serially correlated over time [@bdm2004].
 - **Coarser is safer** (weakly larger SE) — but you need **enough clusters**.
-- **Too few clusters** $\Rightarrow$ the formula breaks: a **wild-cluster bootstrap**
-  (simulate the null instead of trusting the $t$-table) restores the test — see the
-  *Going further* appendix.
+- **Too few clusters** $\Rightarrow$ the formula is unreliable: a **wild-cluster
+  bootstrap** (simulate the null instead of using the $t$-table) restores the size of
+  the test — see the appendix.
 - Default: with grouped/repeated data, **cluster by the group — and report $G$.**
 
 # Application
 
-## A long-standing question
+## Temperature and economic growth
 
 Does a hot climate lower economic growth?
 
 > *There are countries where the excess heat ... makes men lazy and discouraged.*
 > — Montesquieu (1748)
 
-The modern version: high temperatures reduce productivity and growth. How do we test it
-**credibly**? [@djo2012]
+The modern hypothesis: high temperatures reduce productivity and growth. The question is
+how to test it with a **credible identification** [@djo2012].
 
-## Cross-section / between: what is missing?
+## Cross-section: time-invariant confounders
 
 A cross-section (or between) regression of growth on temperature,
 $$ \text{Growth}_i=\gamma\,\text{Temp}_i+\varepsilon_i, $$
-compares **hot vs. cold countries** — which differ in many *fixed* ways ($f_i$):
+compares **hot vs. cold countries**. This is a problem because countries differ in many
+*fixed* ways ($f_i$):
 
 - hot, poor countries were often **colonized**, with lasting institutional damage;
 - the industrial revolutions happened in **temperate** climates (accident + slow
@@ -358,7 +413,7 @@ compares **hot vs. cold countries** — which differ in many *fixed* ways ($f_i$
 These are **time-invariant confounders** → the cross-section / between estimate is
 biased.
 
-## Within: temperature shocks inside each country
+## Within: temperature variation inside each country
 
 Add a country fixed effect and use **year-to-year temperature variation within each
 country**:
@@ -370,7 +425,7 @@ $$ \text{Growth}_{it}=\beta\,\text{Temp}_{it}+f_i+u_{it}. $$
 - Still a threat: **time-varying** confounders correlated with temperature (El Niño
   cycles, adaptation) — a country fixed effect cannot remove those.
 
-## Results: no effect on average
+## Results: average effect
 
 \begin{center}
 \begin{tabular}{lc}
@@ -393,11 +448,11 @@ Temperature & $-0.325$\\
 
 - Poor countries are concentrated in **agriculture** (up to ~80% of activity), poorly
   insured.
-- Temperature should bite **harder** there than in rich, service-based, air-conditioned
-  economies.
+- Temperature should have a **larger** effect there than in rich, service-based,
+  air-conditioned economies.
 - Test it with an **interaction**: let the temperature effect differ for poor countries.
 - We also add **year effects** $f_t$ — global shocks (recessions, oil prices) common to
-  all countries would otherwise contaminate the estimate.
+  all countries would otherwise bias the estimate.
 
 ## Interaction: the effect in poor countries
 
@@ -424,34 +479,20 @@ So the poor-country effect is $\beta+\alpha=0.261-1.655=\mathbf{-1.394}$ pp — 
 $\approx 0$ in rich countries.
 
 \footnotesize
-*Country \& year FE; clustered by country. Testing $\beta+\alpha$ needs its **own** SE (a
-linear-combination test), not the stars on $\alpha$.*
+*Country \& year FE; clustered by country.*
+\alert{Testing $\beta+\alpha$ needs its \textbf{own} SE (a linear-combination test), not
+the stars on $\alpha$ or on $\beta$.}
 
-## Dell et al.: the clustering problem
+## Beyond Dell et al.: inference in country-year panels
 
-The regression is a country-year panel. Its errors can be correlated in two directions.
-
-- **Across years, within a country.** A growth shock persists, so the errors of one
-  country in 1990 and 1991 share it. Clustering by country allows any correlation inside
-  a country's block ($G=125$).
-- **Across countries, within a year.** A drought or an El Niño year hits neighbouring
-  countries at once; the region$\times$year effect removes the common part, the rest is
-  correlated inside the region-year cell. Clustering by region-year allows it.
-- **Both at once: two-way clustering** (Cameron et al. 2011): country blocks plus
-  region-year blocks, minus the overlap counted twice.
-
-Dell et al. cluster by country in Table 2 (the estimates above) and two-way from
-Table 3 on: the practice of 2012. The next slide gives the current one.
-
-## Country-year panels today: two directions, two tools
-
-Weather shocks are correlated over time inside a country and across space between
-countries. Each direction has its tool.
+Dell et al. cluster by country, then two-way by country and region-year. Clustering by
+country treats the correlation of one country's errors over time. What it leaves
+untreated is the correlation between **neighbouring countries in the same year**, which a
+drought or an El Niño year produces. The estimators below treat that second direction.
 
 \small
 
-- **Serial correlation inside a country: cluster by country.** Dell et al. do this;
-  125 clusters is enough. It leaves the second direction untreated.
+- **Serial correlation inside a country: cluster by country.** 125 clusters is enough.
 - **Spatial correlation between countries: Conley (1999) standard errors.** The
   correlation of shocks decays with distance, not at a region border. Each pair of
   observations enters $\Omega$ with a weight that declines with the distance between the
@@ -612,7 +653,7 @@ for v in ["iid", "hetero", {"CRV1": "id"}, {"CRV1": "region"}]: # 1
   estimation actually used, after dropping singletons. The Moulton factor of the chapter
   is checked against the ratio of the third to the second.
 
-## Why cluster: the residuals of a farm resemble one another
+## Serial correlation of a farm's residuals
 
 Four lines measure the year-to-year correlation of a farm's residuals.
 
@@ -658,7 +699,8 @@ $\Omega=\E[\varepsilon\varepsilon'\mid X]$ the $NT\times NT$ error covariance. O
 \textbf{Clustered:} $\Omega$ block-diagonal (free within groups).
 \end{block}
 
-The point estimate never moves; the standard error is entirely a statement about $\Omega$.
+The point estimate is the same under the three choices; only the standard error depends
+on $\Omega$.
 
 ## The cluster-robust estimator (Liang–Zeger, 1986)
 
@@ -670,20 +712,10 @@ $$ \widehat{\Var}_{\text{CR}}(\hat\beta)=\tfrac{G}{G-1}\,(X'X)^{-1}\Big(\textsty
   **sum over independent clusters** is consistent. $\tfrac{G}{G-1}$ is a small-sample fix.
 - Consistent as $G\to\infty$ (**many clusters**), *not* as the cluster size grows.
 
-## Moulton (1990): the canonical lesson
+## Bertrand et al. (2004): the experiment
 
-A cluster-level regressor with equicorrelated errors (intraclass correlation $\rho$,
-cluster size $\bar n$) gives the **Moulton factor**:
-$$ \frac{\Var(\hat\beta)_{\text{true}}}{\Var(\hat\beta)_{\text{naive}}}=1+(\bar n-1)\rho. $$
-
-- $\bar n=50,\rho=0.1\Rightarrow \sqrt6\approx2.5\times$; $\bar n=1000,\rho=0.05\Rightarrow\approx7\times$.
-- A country-level tax rate with 30{,}000 firms: information lives at the **country**, not
-  the firm. You cannot escape clustering by disaggregating.
-
-## Bertrand–Duflo–Mullainathan (2004): the experiment
-
-A famous stress-test of clustered inference. The question: do the **standard
-standard errors** used in policy evaluations actually have the right size?
+A simulation test of inference in policy evaluations. The question: do the
+**conventional standard errors** used in these studies give tests of the right size?
 
 - **Data.** The *Current Population Survey* (CPS) — the large monthly U.S. household
   survey — gives many years of individual wages across the 50 states.
@@ -691,27 +723,27 @@ standard errors** used in policy evaluations actually have the right size?
   random year, and pretend a law switched on there. It changes nothing, so the true
   effect is **zero by construction** ($\beta=0$).
 - **The test.** Estimate the "effect" of this fake law on wages and ask how often the
-  $t$-test rejects $\beta=0$ at the $5\%$ level. With honest SEs it should reject
+  $t$-test rejects $\beta=0$ at the $5\%$ level. With correct SEs it should reject
   $\approx 5\%$ of the time. Repeat over hundreds of random placebos.
 
-## Bertrand–Duflo–Mullainathan (2004): the trap, and the fix
+## Bertrand et al. (2004): results and correction
 
 \begin{block}{The result}
 Classical (i.i.d.) SEs rejected the true null in $\approx 45\%$ of placebos —
 nine times the nominal $5\%$. Clustering by \textbf{state} brought it back to $6$–$8\%$.
 \end{block}
 
-- **Why so bad?** Wages are **serially correlated** within a state (this year looks
+- **Reason.** Wages are **serially correlated** within a state (this year looks
   like last year), *and* the fake law, once on, **stays on** for years (treatment is
   persistent). The many state–year rows are far from independent — effectively there is
   only **one experiment per state**, not one per state–year.
-- **The fix.** Cluster at the **state** level (the unit of treatment): the SEs then
+- **Correction.** Cluster at the **state** level (the unit of treatment): the SEs then
   count $\approx 50$ blocks, not thousands of rows, and the test size is restored.
 - **Lesson.** Cluster at the level of treatment assignment — not the finer unit–year.
 
-## Abadie–Athey–Imbens–Wooldridge (2023): when to cluster, really
+## Abadie et al. (2023): clustering as a design question
 
-Reframes clustering as a question about **design**, not residuals. Cluster if **either**:
+Clustering is decided by the **design** of the data. Cluster if **either**:
 
 1. **Sampling design** — you sampled clusters, then units within them (schools, then
    pupils).
@@ -719,8 +751,8 @@ Reframes clustering as a question about **design**, not residuals. Cluster if **
 
 - If **neither** holds (a census; unit-specific treatment), clustering may be unnecessary
   and can even *cost* precision.
-- "Are errors correlated?" is the wrong question; "did the data or the treatment arrive in
-  clusters?" is the right one.
+- The criterion is whether the sample or the treatment was drawn by cluster; a
+  correlation of the residuals alone does not require clustering.
 
 ## Where to cluster: the practical rule
 
@@ -734,7 +766,7 @@ done, or (ii) residuals stay correlated.
 - But coarser shrinks $G$; below $\sim 15$–$20$ clusters the formula degrades.
 - **Never cluster finer than the level of treatment assignment.**
 
-## Multiway clustering (Cameron–Gelbach–Miller, 2011)
+## Multiway clustering (Cameron et al., 2011)
 
 Correlation along **two** non-nested dimensions (e.g. country *and* year):
 $$ \widehat\Var_{\text{2-way}}=\widehat\Var_{\text{country}}+\widehat\Var_{\text{year}}
@@ -755,19 +787,19 @@ CRV1 is consistent only as $G\to\infty$. When $G$ is small it misbehaves in **tw
 
 Each needs a *different* remedy.
 
-## Few clusters: the remedies
+## Few clusters: corrections
 
 Rather than trust the $t$-table when $G$ is small, **simulate** the test's own
 distribution and read the $p$-value off it.
 
-- **Wild-cluster bootstrap** (Cameron–Gelbach–Miller 2008): re-estimate the model
+- **Wild-cluster bootstrap** (Cameron et al. 2008): re-estimate the model
   thousands of times, each time flipping the sign of every cluster's residuals at
   random ($\pm 1$). This builds the distribution of the $t$-statistic *under the null*,
-  using only $G$ blocks. The historic default — but it **fails with few *treated*
-  clusters** (can trap $p\approx 1$). Use with care.
+  using only $G$ blocks. The former default; it **fails with few *treated*
+  clusters** ($p$-values close to 1).
 - **CR2 + Satterthwaite df** (Imbens–Kolesár 2016; Pustejovsky–Tipton 2018): bias-corrected
-  sandwich + effective df. Good default to $G\approx10$ when leverage is balanced.
-- **CR3 cluster jackknife** (MacKinnon–Nielsen–Webb 2023): robust when a few clusters carry
+  sandwich + effective df. Recommended down to $G\approx10$ when leverage is balanced.
+- **CR3 cluster jackknife** (MacKinnon et al. 2023): robust when a few clusters carry
   most of the leverage.
 - **Randomization inference** (Young 2019): permute treatment across clusters;
   distribution-free.
@@ -781,6 +813,6 @@ safer, but keep enough clusters. Few clusters $\to$ CR2 / CR3 or randomization i
 \end{block}
 
 \footnotesize
-Moulton (1990); Liang–Zeger (1986); Bertrand–Duflo–Mullainathan (2004); Cameron–Gelbach–Miller
-(2008, 2011); Cameron–Miller (2015); Imbens–Kolesár (2016); Pustejovsky–Tipton (2018);
-Abadie–Athey–Imbens–Wooldridge (2023); MacKinnon–Nielsen–Webb (2023); Young (2019).
+Moulton (1990); Liang–Zeger (1986); Bertrand et al. (2004); Cameron et al. (2008, 2011);
+Cameron–Miller (2015); Imbens–Kolesár (2016); Pustejovsky–Tipton (2018); Abadie et al.
+(2023); MacKinnon et al. (2023); Young (2019).
