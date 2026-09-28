@@ -308,9 +308,13 @@ college, $z_2=$ quarter of birth), each is its own moment condition:
 $$ \E[z_{1i}\,\varepsilon_i]=0 \qquad\text{and}\qquad \E[z_{2i}\,\varepsilon_i]=0. $$
 
 - Each *alone* gives $\hat\beta_1=\dfrac{\Cov(z_1,y)}{\Cov(z_1,x)}$,
-  $\hat\beta_2=\dfrac{\Cov(z_2,y)}{\Cov(z_2,x)}$.
-- In finite samples $\hat\beta_1\neq\hat\beta_2$: **two equations, one unknown** —
-  **over-identification** ($L=2>1$).
+  $\hat\beta_2=\dfrac{\Cov(z_2,y)}{\Cov(z_2,x)}$: either instrument **alone** identifies
+  $\beta$. Together they give two equations for one unknown, and in a finite sample
+  $\hat\beta_1\neq\hat\beta_2$.
+- The second instrument is not needed to estimate $\beta$. This surplus is
+  **over-identification** ($L$ instruments, $K$ endogenous regressors: $L=K$
+  just-identified, $L>K$ over-identified), and it leaves $L-K$ restrictions that can be
+  **tested**.
 
 $\to$ **GMM** answers both: **(1)** how to *combine* them? **(2)** do they *agree* (a
 test of validity)?
@@ -332,22 +336,23 @@ $$ \boxed{\;\hat\beta_{GMM}=\arg\min_\beta\; \bar g(\beta)'\,W\,\bar g(\beta)\;}
 - Over-identification also gives a **specification test** of instrument validity,
   Hansen's $J$ (next slide).
 
-## Are the instruments valid? The over-identification test
+## Are the instruments valid? Comparing the two estimates
 
-Over-identified ($L>\#$endog), valid instruments should **agree** up to noise —
-disagreement flags an invalid one.
+Two valid instruments must give the same answer in the population, so the surplus
+restriction can be checked. In the sample, $\hat\beta_1$ and $\hat\beta_2$ should differ
+only by sampling noise.
 
-\begin{block}{Sargan--Hansen $J$ statistic}
-$$ J = n\,\bar g(\hat\beta)'\,\hat S^{-1}\,\bar g(\hat\beta)
-   \ \xrightarrow{d}\ \chi^2_{\,L-\#\text{endog}}, \qquad H_0:\ \E[z_i\varepsilon_i]=0. $$
-Sargan (homoskedastic) / Hansen (robust); dof $=L-1$ with one endogenous $x$.
+\begin{block}{The Sargan--Hansen test}
+$H_0$: every instrument is valid, $\E[z_{\ell i}\varepsilon_i]=0$ for all $\ell$. Under
+$H_0$ the statistic $J$ follows a $\chi^2$ with $L-K$ degrees of freedom, one per surplus
+instrument. Sargan assumes homoskedastic errors, Hansen is robust.
 \end{block}
 
-- **Reject** $\Rightarrow$ an over-identifying restriction fails: an instrument is invalid
-  (or the model is misspecified).
-- **Just-identified** ($L=\#$endog) $\Rightarrow 0$ dof: exclusion **cannot be tested**.
-- A **joint**, low-power test: it won't say *which* fails, and a pass is **reassuring, not
-  proof**.
+- **Reject.** The estimates differ by more than sampling noise. At least one instrument is
+  invalid, or the model is misspecified. The test does not say which one.
+- **Do not reject.** Reassuring, not a proof. The test has low power, and two instruments
+  that fail in the *same* direction agree with each other and pass it.
+- **One instrument.** No surplus, no test. Exclusion is argued, as on the schooling slide.
 
 ## Dynamic panels: GMM with lagged instruments
 
