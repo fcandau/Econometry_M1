@@ -166,31 +166,25 @@ In practice, estimate 2SLS with a dedicated IV routine (Stata `ivreghdfe`; Pytho
 
 ## What does IV estimate? LATE and compliers
 
-Take $z$ and $x$ **binary** ($z$ = an offer of the treatment). With **heterogeneous**
-effects $\beta_i$, IV recovers a *local* effect, not the average one, under one extra
-assumption:
+Under homogeneous effects, $\beta$ is a single parameter and IV estimates it. Under
+heterogeneous effects $\beta_i$, the IV ratio does not identify $\E[\beta_i]$. It
+identifies the average of $\beta_i$ over the subpopulation whose treatment status is
+shifted by the instrument, the **compliers** — the **Local Average Treatment Effect**
+(LATE):
+$$ \hat\beta_{IV}\ \xrightarrow{p}\ \E\!\left[\beta_i \mid i \text{ complier}\right]
+   \equiv \text{LATE} \qquad \text{(Imbens--Angrist 1994)}. $$
 
-\begin{block}{Monotonicity (no defiers)}
-If the instrument affects treatment in one direction --- positively (or negatively) ---
-then \textbf{no} unit reacts in the opposite direction (no defiers).
-\end{block}
-
-- A **complier** is a unit whose treatment the instrument actually moves (treated only
-  when encouraged, untreated otherwise).
-- Under relevance, exclusion and monotonicity, the Wald estimator identifies the **Local
-  Average Treatment Effect** — the average effect **for compliers**:
-  $$ \hat\beta_{IV}\ \xrightarrow{p}\ \E\!\left[\beta_i \mid i \text{ complier}\right]=\text{LATE}. $$
-- So IV gives the effect **for compliers**, not the population — different instruments give
-  different LATEs.
-
-\footnotesize *Imbens \& Angrist (1994). This is why \emph{negative} shift-share weights
-(later) warn of heterogeneity.*
+- The complier subpopulation is defined by the instrument and is not observed. A
+  different instrument shifts a different subpopulation.
+- Two valid instruments therefore identify two different LATEs, and a gap between
+  $\hat\beta_1$ and $\hat\beta_2$ is not in itself evidence of invalidity.
+- External validity is limited accordingly: the estimand is local to the margin the
+  instrument shifts, not the population average effect.
 
 ## Several instruments for one regressor
 
 So far we used a single instrument $z$ for the endogenous $x$. But we often have
-**several** valid instruments $z_1,\dots,z_L$ for the *same* $x$ — e.g. for the return to
-schooling, both distance to college and quarter of birth (defended next).
+**several** valid instruments $z_1,\dots,z_L$ for the *same* $x$.
 
 **Excluded vs. included.** The $z_\ell$ are the **excluded instruments**: they appear
 in the **first stage** (they help predict $x$) but are **excluded from the outcome
@@ -204,7 +198,8 @@ The **exclusion restriction** is exactly the claim that the excluded instruments
 
 \begin{block}{Example: returns to schooling}
 $x=$ years of schooling, $y=$ wages. Candidate instruments: $z_1=$ distance to the nearest
-college, $z_2=$ quarter of birth.
+college, $z_2=$ exposure to the 1959 Berthoin reform, which raised the school-leaving age
+from 14 to 16 for cohorts born from 1953 onwards.
 \end{block}
 
 For each candidate, two questions: is it **relevant** (does it move schooling? testable
@@ -216,66 +211,38 @@ attending $\Rightarrow$ more schooling (visible in the first stage). *Excluded?*
 wages only through schooling — credible **only after** controls for region, urbanicity and
 family background (college towns may differ economically).
 
-**$z_2$ (quarter of birth, Angrist--Krueger 1991).** *Relevant?* school-entry cutoffs and a
-compulsory-schooling age let those born early leave with less schooling. *Excluded?* birth
-timing is as-good-as random — but the first stage is **tiny**, a **weak instrument**
-(Bound--Jaeger--Baker 1995).
+## Defending the second instrument: the Berthoin reform
 
-## The first stage with several instruments
+**$z_2$ (the Berthoin reform, Grenet 2013).** *Relevant?* pupils who would have left at 14
+had to stay two more years, so cohorts born from 1953 hold more schooling — a first stage
+visible in administrative data. *Excluded?* the date of birth is not chosen and the law
+applied nationally on a fixed date; the threat is that adjacent cohorts differ for other
+reasons (post-war expansion of secondary schools, cohort size), which is why such designs
+control for smooth cohort trends.
 
-All excluded instruments (together with the controls) enter the **first stage** at
-once:
+The compliers are the pupils who would have stopped at 14, so the estimate is **their**
+return to schooling, not the average one.
+
+## Are the instruments strong enough? The first-stage $F$
+
+All excluded instruments enter the first stage together with the controls:
+
 \begin{block}{First stage}
 $$ x_i = \pi_1 z_{1i}+\dots+\pi_L z_{Li} + w_i\gamma + \nu_i
    \;\;\longrightarrow\;\; \hat x_i. $$
 \end{block}
 
-- 2SLS forms the fitted value $\hat x_i$ — the **single best linear combination** of
-  all the instruments — pooling their information automatically.
-- The **second stage is unchanged**: regress $y_i$ on $\hat x_i$ (and the controls).
-- Relevance is now a **joint** question — do the instruments *together* move $x$?
+Relevance is therefore a **joint** question, and the first-stage $F$ tests
+$H_0:\pi_1=\dots=\pi_L=0$. With a single instrument it is the squared first-stage $t$.
 
-That joint question is what the **first-stage $F$** (next slide) answers.
-
-## Are the instruments strong enough? The first-stage $F$
-
-\begin{block}{First-stage $F$ test}
-Test the joint null that the excluded instruments do \emph{not} explain the
-treatment: $\;H_0:\ \pi_1=\dots=\pi_L=0.$ With a \emph{single} instrument ($L=1$) it
-is just the squared first-stage $t$: $F=t^2$.
-\end{block}
-
-- **Weak instruments** ($=$ low $F$): 2SLS is **biased toward OLS** and its CIs
-  **over-reject** — even with a valid instrument.
-- **Rule of thumb:** $F>10$ (Staiger \& Stock, 1997).
-
-\begin{block}{Stock--Yogo (2005): the rule of thumb made rigorous}
-Critical values for the first-stage $F$ to formally reject ``weak instruments'' at a
-stated tolerance (e.g. 2SLS bias $\le 10\%$ of OLS bias); the threshold \emph{rises}
-with the number of instruments.
-\end{block}
-
-- Under heteroskedasticity or clustering, use the **Kleibergen--Paap** $F$, the
-  first-stage $F$ with robust standard errors. $F$ tests **relevance**; Hansen's $J$
-  (later) tests **validity**.
-
-## CIs that survive weak instruments: Anderson--Rubin
-
-When the first-stage $F$ is low, 2SLS $t$-based intervals are **unreliable**. The
-**Anderson--Rubin (AR)** test repairs inference on $\beta$.
-
-\begin{block}{The idea}
-To test $H_0:\beta=\beta_0$, impose it and ask whether the instrument still predicts
-the imposed residual:
-$$ y_i-\beta_0 x_i = z_i'\theta + u_i, \qquad H_0:\ \theta=0. $$
-If $\beta_0$ is true, $y_i-\beta_0 x_i$ is exogenous, so $z$ has \textbf{no} power.
-\end{block}
-
-- The **AR set** $=$ all $\beta_0$ not rejected; correct coverage **at any instrument
-  strength**. With one instrument it is **exact**.
-- It can be **wider**, unbounded, or empty — itself informative about (non-)identification.
-- **Lee, McCrary, Moreira & Porter (2022):** $F>10$ is too lenient for honest 5\%
-  inference — prefer **AR** (or their $tF$ correction).
+- **Weak instruments.** When the instruments barely move $x$, 2SLS is **biased toward
+  OLS** and its confidence intervals **over-reject**.
+- **Thresholds.** Staiger–Stock (1997) propose the rule of thumb $F>10$. Stock–Yogo (2005)
+  tabulate the value $F$ must exceed for the remaining bias to stay below a chosen
+  fraction of the OLS bias. That value is **larger when there are more instruments**.
+- **In practice.** Under heteroskedasticity or clustering, use the **Kleibergen–Paap**
+  $F$. When $F$ is low, report an **Anderson–Rubin** interval, whose coverage is correct
+  at any instrument strength.
 
 # GMM
 
@@ -304,7 +271,7 @@ One equation, one unknown $\beta$ — solved **exactly**.
 (the case above).
 
 **Two instruments for the *same* $\beta$.** In our schooling example ($z_1=$ distance to
-college, $z_2=$ quarter of birth), each is its own moment condition:
+college, $z_2=$ the Berthoin reform), each is its own moment condition:
 $$ \E[z_{1i}\,\varepsilon_i]=0 \qquad\text{and}\qquad \E[z_{2i}\,\varepsilon_i]=0. $$
 
 - Each *alone* gives $\hat\beta_1=\dfrac{\Cov(z_1,y)}{\Cov(z_1,x)}$,
@@ -327,32 +294,23 @@ and choose $\beta$ to make them **jointly as close to zero as possible**, in the
 metric of a weight matrix $W$:
 $$ \boxed{\;\hat\beta_{GMM}=\arg\min_\beta\; \bar g(\beta)'\,W\,\bar g(\beta)\;} $$
 
-- $W$ decides **how much each moment counts**. For these linear moments the minimiser
-  has a closed form: $\hat\beta_{GMM}=(x'ZWZ'x)^{-1}x'ZWZ'y$, with $Z$ the $n\times L$
-  instrument matrix.
-- **2SLS is the case $W=(Z'Z)^{-1}$.** The weight matrix is what will reconnect the
-  Bartik 2SLS to a GMM on the shares (shares view). *Efficient* (two-step) GMM sets
-  $W=\hat S^{-1}$, the inverse of the moments' covariance.
-- Over-identification also gives a **specification test** of instrument validity,
-  Hansen's $J$ (next slide).
+- $W$ decides **how much each moment counts**. With a single instrument there is one
+  moment, solved exactly, and $W$ plays no role.
+- **2SLS is the case $W=(Z'Z)^{-1}$.** Another $W$ gives another estimator of the same
+  $\beta$: the choice affects precision, not what is identified.
 
-## Are the instruments valid? Comparing the two estimates
+## Are the instruments valid?
 
-Two valid instruments must give the same answer in the population, so the surplus
-restriction can be checked. In the sample, $\hat\beta_1$ and $\hat\beta_2$ should differ
-only by sampling noise.
+Two valid instruments must give the same answer in the population. The **Sargan–Hansen
+test** asks whether $\hat\beta_1$ and $\hat\beta_2$ differ by more than sampling noise.
 
-\begin{block}{The Sargan--Hansen test}
-$H_0$: every instrument is valid, $\E[z_{\ell i}\varepsilon_i]=0$ for all $\ell$. Under
-$H_0$ the statistic $J$ follows a $\chi^2$ with $L-K$ degrees of freedom, one per surplus
-instrument. Sargan assumes homoskedastic errors, Hansen is robust.
-\end{block}
-
-- **Reject.** The estimates differ by more than sampling noise. At least one instrument is
-  invalid, or the model is misspecified. The test does not say which one.
-- **Do not reject.** Reassuring, not a proof. The test has low power, and two instruments
-  that fail in the *same* direction agree with each other and pass it.
-- **One instrument.** No surplus, no test. Exclusion is argued, as on the schooling slide.
+- $H_0$: all instruments are valid. The statistic follows a $\chi^2$ with $L-K$ degrees
+  of freedom, one per surplus instrument.
+- **Reject.** At least one instrument is invalid, or the model is misspecified. The test
+  does not say which one.
+- **Do not reject.** Reassuring, not a proof: two instruments that fail in the same
+  direction agree with each other and pass.
+- **One instrument.** No surplus, no test.
 
 ## Dynamic panels: GMM with lagged instruments
 
@@ -366,27 +324,10 @@ $$ y_{it}=\rho\,y_{i,t-1}+\beta x_{it}+f_i+u_{it}. $$
   $\Delta y_{i,t-1}$ with **deeper lagged levels** $y_{i,t-2},y_{i,t-3},\dots$
 - **Blundell--Bond (1998)** "system GMM": also use lagged *differences* as instruments for
   the levels equation (needs an extra stationarity assumption).
-
-## ...and why dynamic GMM is questionable
-
-\begin{alertblock}{Not a default choice}
-In the \textbf{dynamic} case especially, GMM becomes a \textbf{black box}: fragile
-results, and diagnostics that can mislead.
-\end{alertblock}
-
-- **Instruments proliferate** with $T$ $\Rightarrow$ it overfits $y_{i,t-1}$, drags
-  $\hat\beta$ toward the biased within estimate, and inflates the Hansen $J$ toward
-  $p\approx1$ — a meaningless "pass" (Roodman 2009).
-- **Researcher choices** (lag depth, "collapsing" the instrument set to fewer lags, one-
-  vs two-step, the Windmeijer correction of two-step standard errors) make a result easy
-  to *fish*.
-- **Weak** when $y$ is persistent: lagged levels barely move the differences.
-
-\small
-**Shift-share is different:** *not* a lag-instrument GMM, but an instrument from
-**observed** shares and shocks with an **economic story** for exogeneity. Goldsmith-Pinkham
-et al. (2020) even show it *is* GMM --- but a **transparent** one whose identifying
-variation we can see and defend.
+- **We will not use these estimators.** The instruments multiply with $T$, the results
+  depend on choices the reader cannot check, and the diagnostics mislead (Roodman 2009).
+  The instruments of this chapter are observed shares and shocks, with an economic
+  argument for their exogeneity.
 
 # Shift-share IV
 
@@ -585,61 +526,20 @@ uncorrelated with the unobservable?*
 This is the natural reading when you have **few, dominant sectors** and tell a story
 like "places more exposed to industry $k$ form a clean comparison group."
 
-## Opening the black box: Rotemberg weights
+## Rotemberg weights: where the estimate comes from
 
-Building on Rotemberg (1983), Goldsmith-Pinkham et al. decompose the over-identified
-estimator into the
-$K$ **just-identified** estimators, one per share-instrument:
+The Bartik estimate is a weighted average of the $K$ single-share IV estimates, with
+weights $\hat\alpha_k$ known as the **Rotemberg weights** (Goldsmith-Pinkham et al.
+2020):
+$$ \hat\beta_{Bartik}=\sum_{k}\hat\alpha_k\,\hat\beta_k, \qquad \sum_k\hat\alpha_k=1. $$
+They show which shares produce the headline estimate.
 
-\begin{block}{Proposition 3.1 (Goldsmith-Pinkham et al.)}
-$$ \hat\beta_{Bartik} = \sum_{k=1}^{K} \hat\alpha_k\,\hat\beta_k, \qquad
-   \sum_k \hat\alpha_k = 1, $$
-where the just-identified estimate and the \textbf{Rotemberg weight} are
-$$ \hat\beta_k = \big(s_k'x\big)^{-1} s_k'y, \qquad
-   \hat\alpha_k = \frac{g_k\, s_k'x}{\sum_{k'} g_{k'}\, s_{k'}'x}. $$
-(Here $x,y$ are residualized on the controls; $s_k=\{s_{ik}\}_i$, the $k$-th share column.)
-\end{block}
-
-So Bartik is a **weighted average of single-share IV estimates**.
-
-## Reading the Rotemberg weights
-
-The weight $\hat\alpha_k$ tells you **how much industry $k$ drives the headline
-estimate** — and how sensitive $\hat\beta$ is to a violation of exogeneity in that
-one share. Practical lessons from Goldsmith-Pinkham et al.:
-
-- Weights measure **sensitivity to misspecification** (Andrews–Gentzkow–Shapiro
-  2017): bias in a high-$\hat\alpha_k$ share passes strongly into $\hat\beta$.
-- The weights **sum to one but can be negative** — an *affine*, not convex, average; a
-  warning for the LATE interpretation under heterogeneous effects.
-- The **shifts $g_k$ explain little** of the weights ($<1\%$ in their example) — "the
-  variation comes from the shocks" is often *wrong*.
-- In their application, **5 industries hold $>40\%$** of the weight (oil & gas on top).
-
-\footnotesize
-*Lineage:* that IV recovers a **weighted average of heterogeneous effects** dates to
-Imbens & Angrist (1994) / Angrist & Imbens (1995); negative weights under many
-instruments are sharpened by Mogstad, Torgovitsky & Walters (2021).
-
-## The identifying assumption (shares view)
-
-\begin{alertblock}{Share exogeneity}
-The exposure shares $s_{ik}$ are uncorrelated with the unit-level unobservable
-$\varepsilon_i$ (conditional on controls).
-\end{alertblock}
-
-When outcomes are in changes, this is a **parallel-trends** condition: absent the shock,
-units with high and low exposure to $k$ would have moved alike (the identifying
-assumption of the difference-in-differences design, next chapter). A **pre-trend** test
-checks it on the years before the shock. The shift-share pools **many such comparisons**,
-one per share; inference relies on **many units** (large $N$).
-
-**Diagnostics, for the high-weight shares:**
-
-- correlate them with observable confounders and baseline characteristics;
-- test for **pre-trends** in their comparisons and in $z_i$ overall;
-- report **over-identification** tests and the spread of the $\hat\beta_k$
-  (`bartik_weight` package).
+- **Concentration is bad news.** Five industries hold more than 40 % of the weight in
+  their application: one endogenous share among them is enough to make $\hat\beta$ wrong.
+- **Fewer assumptions to defend.** Only those shares need an exogeneity argument; the
+  others cannot overturn the estimate.
+- **Large negative weights are a bad sign.** $\hat\beta$ can then take a sign that no
+  single share supports.
 
 # Shifts view
 
@@ -648,46 +548,25 @@ one per share; inference relies on **many units** (large $N$).
 Borusyak et al. (2022) start from a different intuition:
 
 \begin{block}{A share-weighted average of random shifts is itself as-good-as-random}
-Even if the shares $s_{ik}$ are \emph{endogenous} (exposed units differ
-systematically), as long as the shocks $g_k$ are as-good-as-randomly assigned across
-many sectors, the instrument $z_i=\sum_k s_{ik}g_k$ is mean-independent of
-$\varepsilon_i$ on average.
+As long as the shocks $g_k$ are as-good-as-randomly assigned across many sectors, the
+instrument $z_i=\sum_k s_{ik}g_k$ is mean-independent of $\varepsilon_i$ on average.
 \end{block}
 
-Example: skill-intensive regions may attract particular immigrants (endogenous
-shares), but if subsidies are randomized across many high- and low-skill industries,
-exposed regions get **typical** instrument values.
+Example: skill-intensive regions may attract particular immigrants, but if subsidies are
+randomized across many high- and low-skill industries, exposed regions get **typical**
+instrument values.
 
-## The shift-level "translation"
+## The shift-share IV is a shock-level regression
 
-Borusyak et al. show the shift-share IV is a **translation device**: the location-level IV
-estimator is numerically equal to a **shock-level IV regression** that uses $g_k$
-*directly* as the instrument.
+Borusyak et al. (2022) show the location-level IV estimate is numerically equal to an IV
+regression run **at the level of the shocks**, with $g_k$ as the instrument and each
+shock weighted by its share of total exposure, $\omega_k$ ($\sum_k\omega_k=1$).
 
-- Aggregate the outcome and treatment to the **shock level** with exposure weights:
-  $\bar y_k=\sum_i s_{ik}y_i\big/\sum_i s_{ik}$, likewise $\bar x_k$; the importance of
-  shock $k$ is $\omega_k=\sum_i s_{ik}\big/\sum_{k'}\sum_i s_{ik'}$, so that
-  $\sum_k\omega_k=1$.
-- Run the IV of $\bar y_k$ on $\bar x_k$, weighted by $\omega_k$, instrumenting with
-  $g_k$.
-
-The **same number** comes out — but now the assumption is stated on the **shocks**,
-and there are as many "observations" as there are **shocks $K$**, not units.
-
-## How many shifts do you really have?
-
-Because each shift carries an importance weight $\omega_k$, the **effective sample
-size** is governed by the concentration of those weights:
-
-\begin{block}{Effective number of shifts}
-$$ K_{\text{eff}} = \frac{1}{\sum_k \omega_k^{2}}, \qquad
-   \sum_k \omega_k^{2} = \text{the Herfindahl index (HHI) of the exposure weights}. $$
-\end{block}
-
-- If a few sectors dominate exposure, $K_{\text{eff}}$ is **small** — the design rests
-  on a handful of shocks and is fragile.
-- The shifts approach needs $K_{\text{eff}}$ **large** so a law of large numbers
-  kicks in.
+- The assumption is then stated on the **shocks**.
+- The sample size that matters is the number of **shocks $K$**, not the number of units.
+- Shocks carry unequal weight, so what counts is the effective number
+  $K_{\text{eff}}=1/\sum_k\omega_k^{2}$. A few dominant sectors make $K_{\text{eff}}$
+  small, and the design rests on a handful of shocks.
 
 ## The identifying assumptions (shifts view)
 
@@ -713,13 +592,14 @@ implausible.
 
 **Diagnostics:**
 
-- **Balance tests** at the shock level: regress $g_k$ on shock-level characteristics.
-- Report $K_{\text{eff}}$ and exposure-weighted summary statistics.
-- Use leave-one-out / externally-measured shifts to kill mechanical correlation.
-- The `ssaggregate` package builds the shock-level dataset.
-
-\footnotesize
-*Standard errors also need special care under shared exposure — the next section.*
+- **Balance of the shocks.** Regress $g_k$ on sector characteristics — size, skill
+  intensity, growth before the shock. A systematic relation means the shocks follow
+  something that may also drive the outcome.
+- **Concentration.** Report $K_{\text{eff}}$: it says on how many shocks the estimate
+  actually rests.
+- **Mechanical correlation.** When the shock is computed from data that include the unit
+  itself, the instrument contains that unit's own outcome. Remove the unit from the
+  computation (leave-one-out), or use a shock measured elsewhere.
 
 # Inference
 
