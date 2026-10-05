@@ -233,16 +233,16 @@ $$ x_i = \pi_1 z_{1i}+\dots+\pi_L z_{Li} + w_i\gamma + \nu_i
 \end{block}
 
 Relevance is therefore a **joint** question, and the first-stage $F$ tests
-$H_0:\pi_1=\dots=\pi_L=0$. With a single instrument it is the squared first-stage $t$.
+$H_0:\pi_1=\dots=\pi_L=0$.
 
-- **Weak instruments.** When the instruments barely move $x$, 2SLS is **biased toward
-  OLS** and its confidence intervals **over-reject**.
-- **Thresholds.** Staiger–Stock (1997) propose the rule of thumb $F>10$. Stock–Yogo (2005)
-  tabulate the value $F$ must exceed for the remaining bias to stay below a chosen
-  fraction of the OLS bias. That value is **larger when there are more instruments**.
-- **In practice.** Under heteroskedasticity or clustering, use the **Kleibergen–Paap**
-  $F$. When $F$ is low, report an **Anderson–Rubin** interval, whose coverage is correct
-  at any instrument strength.
+- **Weak instruments.** Weakness is a matter of the first-stage coefficient relative to
+  its standard error, the $F$, not of its size in levels. With a single instrument
+  $F=t^2$, so an instrument **only just** significant at 5 % ($F=4$) is still weak. 2SLS
+  is then **biased toward OLS** and its confidence intervals **over-reject**.
+- **Thresholds.** $F>10$ as a rule of thumb (Staiger–Stock 1997); Stock–Yogo (2005) raise
+  the threshold with the number of instruments.
+- **In practice.** Use the **Kleibergen–Paap** $F$ under heteroskedasticity or clustering,
+  and an **Anderson–Rubin** interval when $F$ is low, valid at any instrument strength.
 
 # GMM
 
