@@ -14,7 +14,7 @@ bibliography: references.bib
 nocite: |
   @cardkrueger1994, @roth2022, @roth2023, @rambachanroth2023, @bdm2004,
   @conleytaber2011, @fermanpinto2019, @cunningham2021, @freyaldenhoven2021,
-  @goodmanbacon2021
+  @goodmanbacon2021, @ashenfelter1978
 ---
 
 ## Causal inference and the counterfactual
@@ -194,40 +194,23 @@ Pennsylvania (control) & 23.33 & 21.17 & $-2.16$\\
 
 # Comparison group
 
-## Choosing the comparison group
+## Designing the comparison
 
 Parallel trends is an assumption on the **shocks**: absent the policy, the treated and the
 comparison group would have received the same ones. The choice of the comparison group is
 part of the identification strategy and is made on economic grounds before estimation.
 
-\small
 1. **Common shocks.** Same industry, markets and geography, so that the time effect
-   $f_t$ is common to both groups. A group on another market follows its own price cycle.
-2. **Not exposed to the policy** (SUTVA: one unit's treatment does not change another
-   unit's outcome). Identify the channel of the policy (a price, a quantity, a payment)
-   and verify that it did not move for the comparison group.
-3. **No shock specific to the comparison group** during the estimation window.
-4. **Observable implications.** The channel (item 2) and the pre-treatment trends (the
-   dynamics section) can be documented; the counterfactual cannot.
-
-\normalsize
-\begin{block}{Order of the argument}
-The comparison group is justified first, on items 1--3. Estimation then tests the
-observable implications of that justification; it does not replace it.
-\end{block}
-
-## Refine the comparison: region $\times$ year effects
-
-With a panel, the common time shock need not be *national*. Replace $f_t$ by
-$f_{r(i),t}$ — one effect per **region and year**:
-$$ y_{it}=f_i+f_{r(i),t}+\beta\,d_{it}+u_{it}. $$
-
-- Now treated and control units are compared **within the same region in the same year**:
-  a drought, a regional aid scheme, a local processor's collapse all cancel out.
-- The comparison only uses regions where **both** groups are present — a smaller sample,
-  larger standard errors: the cost of a comparison restricted to neighbours.
-- A fixed effect **removes** a shock from the comparison; clustering (panel chapter) only
-  accounts for it in the standard error. Put the fixed effect where the shocks are.
+   $f_t$ is common to both groups, with no shock specific to one group during the
+   estimation window.
+2. **No spillovers (SUTVA).** The policy does not change the outcome of the comparison
+   group. Identify the channel of the policy (a price, a quantity, a payment) and verify
+   that it did not move for that group.
+3. **No anticipation.** The treated group does not respond before the date. Otherwise the
+   pre-period already contains part of the effect.
+4. **No Ashenfelter's dip** (Ashenfelter, 1978). Units do not enter treatment because of
+   a temporary fall in their outcome. Otherwise the outcome recovers without the policy
+   and the estimate overstates the effect.
 
 # Dynamics
 
@@ -243,6 +226,9 @@ $$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}, \qquad d_{it}=D_i\cdot\text{Post}_t. $$
 - The static $\beta$ is an **average over a dynamic path**: over a long post period it
   mixes the first years and the later ones, and it changes with the window. It also says
   nothing about the **pre-trends**. The event study shows both.
+- The time effect can be made specific to a region, $f_{r(i),t}$. Treated and comparison
+  units are then compared **within the same region in the same year**, which removes
+  regional shocks (a drought, a regional aid scheme) from the comparison.
 - The **estimation window** is fixed before estimation. Years excluded for a documented
   shock are named in advance, never after seeing the coefficients.
 
@@ -283,25 +269,25 @@ and conditioning on "passing" can itself distort the estimate (Roth, 2022).
 
 # Diagnostics
 
-## Bounds on the violation: Rambachan and Roth (2023)
+## Sensitivity analysis: Rambachan and Roth (2023)
 
-When the pre-period is *imperfect* rather than broken, ask how large a post-period
-violation the effect could survive.
+Parallel trends rarely holds exactly. The pre-period coefficients show by how much the two
+groups drifted apart, from one year to the next, before the policy.
 
 \begin{block}{The idea}
-Let $M$ be the largest period-to-period deviation from parallel trends in the pre-period.
-For a multiplier $\bar M$ chosen by the analyst, allow the post-period deviation to be
-\textbf{at most $\bar M\times M$}, and compute the confidence interval that remains valid
-under that restriction.
+Assume that after the policy the two groups would have drifted apart by no more than they
+did before it. Or by no more than twice as much, or three times as much. Each assumption
+gives a \textbf{range} for the effect in place of a single number.
 \end{block}
 
-- $\bar M=1$ allows a violation as large as the worst pre-period year. Report the interval
-  for $\bar M=0.5,\,1,\,1.5,\,2$; the first $\bar M$ whose interval contains zero measures
-  the margin.
-- Bounds measure how far the estimate is from needing a **better comparison group**; a
-  failed pre-period calls for one, not for a different standard error.
-- Implemented as `HonestDiD` (R, Stata). It gives the sentence to report: the result
-  survives violations up to $\bar M$ times the pre-period ones.
+- **Example.** The estimated effect in the first year after the policy is $-10$. Before
+  the policy, the gap between the groups never moved by more than 2 from one year to the
+  next. If the drift after the policy is no larger, the effect lies between $-12$ and
+  $-8$, and the conclusion holds.
+- The drift would have to be 5 times larger than any drift observed before the policy for
+  the range to reach zero. This multiple, noted $\bar M$, is the number to report. The
+  larger it is, the more robust the result.
+- The range also includes sampling error (package `HonestDiD`, R and Stata).
 
 ## Placebo tests
 
@@ -338,35 +324,58 @@ farms exit, workers move).
 
 # Inference
 
-## Serial correlation: cluster by unit
+## Autocorrelation and standard errors
 
-$d_{it}$ equals one in **every** post-period of a treated unit: it is perfectly
-autocorrelated within units, and the residuals $u_{it}$ are persistent too.
+A DiD panel follows the same units for many years. Within a unit, two variables change
+little from one year to the next:
 
-\begin{alertblock}{Bertrand, Duflo and Mullainathan (2004)}
-With serially correlated outcomes and a persistent treatment dummy, i.i.d. standard errors
-reject a \emph{true} null of no effect up to \textbf{45\,\%} of the time at the 5\,\% level.
-\end{alertblock}
+- the outcome $y_{it}$, which is autocorrelated (panel chapter);
+- the treatment $d_{it}$, which equals 1 in every year after the policy.
 
-- Fix: **cluster by unit** (or by the group at which treatment is assigned) — the sandwich
-  of the panel chapter, block-diagonal within units.
-- Report $G$, the number of clusters; coarser is safer *if* $G$ stays large.
+The years of one unit are therefore not independent observations, and standard errors that
+treat them as independent are too small.
+
+- **Solution** (Bertrand et al., 2004). Cluster the standard errors by the unit followed
+  over time, the $i$ of $y_{it}$ (a firm, a farm, a person). The correlation between the
+  years of one unit is then allowed (cluster-robust estimator, panel chapter).
+- When the policy is assigned to whole groups of units (all the firms of a region),
+  cluster by that group, because its units share the treatment and its shocks.
+- Report $G$, the number of clusters. The estimator requires a large $G$.
 
 ## One treated group
 
-Many DiDs have **one** treated group — a sector, a state, a country. Then "cluster at the
-level of treatment assignment" means $G=2$: the cluster-robust estimator has one degree
-of freedom and is uninformative. Clustering by unit ignores the shock common to the whole
-treated group in a given year (a price cycle, an embargo), which is a **single draw**.
+Many DiDs have a single treated group: a sector, a state, a country. Two problems follow
+for the standard errors.
 
-- **What you can do:** cluster by unit and report a coarser level as robustness; run
-  **placebo-in-time** and **permutation** tests (assign the treatment to each control
-  group in turn and see where the true estimate falls in that distribution);
-  Conley--Taber (2011) estimate the distribution of the group-year shock from the control
-  groups, Ferman--Pinto (2019) correct for unequal group sizes.
-- **What you must say:** with one treated group, the uncertainty that matters is whether the
-  comparison is right, not the sampling error of a mean. Inference rests on the **design**
-  — the control, the window, the placebos — as much as on the standard error.
+- Clustering at the level of treatment assignment gives $G=2$ clusters, the treated group
+  and the comparison group. The cluster-robust estimator requires a large $G$ and cannot
+  be used.
+- Clustering by unit ignores the shock that hits the whole treated group in a given year
+  (a price cycle, an embargo). With one treated group this shock does not average out,
+  and the standard errors are too small.
+
+1. **Placebo in time.** Estimate the same DiD at dates before the policy, when the true
+   effect is zero. The estimates obtained show how large an effect the shocks alone
+   produce.
+2. **Permutation test.** When several untreated groups are available, assign the
+   treatment to each of them in turn and re-estimate. If the true estimate is larger than
+   almost all of these placebo estimates, the shocks alone are unlikely to explain it
+   (Conley and Taber, 2011; Ferman and Pinto, 2019).
+
+# Conclusion
+
+## Conclusion
+
+1. The objective of a DiD analysis is to estimate the average effect of a policy on the
+   treated group (ATT). It is identified under parallel trends and no anticipation.
+2. The comparison group is chosen on economic grounds, before estimation: common shocks,
+   no spillovers, no anticipation, no Ashenfelter's dip.
+3. The $2\times2$ gives one average effect. The event study gives the dynamic effect.
+4. The result is then checked with the pre-period coefficients, a sensitivity analysis,
+   placebo tests and a balanced panel.
+
+\vspace{6pt}
+Next chapter: units treated at different dates.
 
 # Applied
 
