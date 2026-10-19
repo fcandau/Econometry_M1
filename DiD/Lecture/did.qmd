@@ -34,20 +34,18 @@ parallel world: *The Man in the High Castle* (P. K. Dick), *Back to the Future*,
 
 ## What is difference-in-differences?
 
-A policy hits **some units** at **some date**. We want its causal effect — but treated and
-untreated units differ systematically, so neither a treated-vs-control comparison nor a
-before-vs-after comparison is clean.
+An exogenous shock (a reform, a natural disaster, a price change) hits one group of units,
+the **treated group**, at a known date. A second group with similar characteristics, the
+**control group**, is not hit. Both groups are observed **before** and **after** the date,
+in a panel or in repeated cross-sections.
 
-\begin{block}{The idea in one line}
-Compare the \textbf{change} in the treated group to the \textbf{change} in a comparison
-group. The second difference nets out fixed level differences \emph{and} common time shocks.
+\begin{block}{The method}
+The effect of the shock is the \textbf{change} in the outcome of the treated group minus
+the \textbf{change} in the outcome of the control group.
 \end{block}
 
-- Needs **panel** (or repeated cross-sections): the same groups, before and after.
-- **Simple DiD is the TWFE model from the panel chapter** — the only new ingredient is one
-  explanatory variable: a **dummy** for "treated group $\times$ after treatment".
-- This chapter: the design with **one treatment date**. The next two chapters extend it to
-  **staggered** adoption and to treatments that are a **dose** or that **switch on and off**.
+- In a regression, simple DiD is the TWFE model of the panel chapter with one additional
+  regressor, a dummy equal to 1 for treated units after the shock.
 
 ## The origin: John Snow and cholera (1855)
 
@@ -77,7 +75,7 @@ difference-in-differences.
 
 1. The **canonical $2\times2$** — potential outcomes, parallel trends, the estimator.
 2. **The comparison group** — what makes a control credible.
-3. **Dynamics** — event studies and two-way fixed effects.
+3. **Dynamics** — the event study.
 4. **Diagnostics** — pre-trends, bounds, placebos, composition.
 5. **Inference** — serial correlation, and one treated group.
 
@@ -163,10 +161,9 @@ $$ y_{it}=\alpha+\gamma\,D_i+\lambda\,\text{Post}_t+\beta\,(D_i\times\text{Post}
 
 - $\gamma$ — the fixed treated-vs-control gap; $\lambda$ — the common time shock.
 - **$\beta$ — the DiD coefficient, equal to the ATT** under parallel trends; the
-  interaction $D_i\times\text{Post}_t$ equals $d_{it}$ (one for treated units in the post
-  period, zero otherwise).
-- In a **balanced** panel this equals two-way fixed effects (the dynamics section); with
-  entry and exit, the two estimates differ.
+  interaction $D_i\times\text{Post}_t$ equals $d_{it}$.
+- Most of the time this standard DiD is estimated with a TWFE:
+$$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}. $$
 
 ## Example: Card and Krueger (1994)
 
@@ -208,29 +205,19 @@ part of the identification strategy and is made on economic grounds before estim
    that it did not move for that group.
 3. **No anticipation.** The treated group does not respond before the date. Otherwise the
    pre-period already contains part of the effect.
-4. **No Ashenfelter's dip** (Ashenfelter, 1978). Units do not enter treatment because of
-   a temporary fall in their outcome. Otherwise the outcome recovers without the policy
-   and the estimate overstates the effect.
+4. **No selection on a temporary shock.** Units may differ from the control group in
+   level, but they must not enter treatment because their outcome has just changed
+   temporarily. Example: Ashenfelter's dip (Ashenfelter, 1978). Workers enter a training
+   programme because their earnings have just fallen, and these earnings would have
+   recovered anyway.
+
+## Two violations of the design
+
+\begin{center}
+\includegraphics[width=\textwidth]{fig/violations.png}
+\end{center}
 
 # Dynamics
-
-## From the $2\times2$ to panel TWFE
-
-With many units and periods, write the DiD as **two-way fixed effects**:
-$$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it}, \qquad d_{it}=D_i\cdot\text{Post}_t. $$
-
-- $f_i$ absorbs fixed unit differences, $f_t$ the common time shocks (recall the panel
-  chapter). With **common timing** (all treated units adopt at the same date),
-  $\beta=\text{ATT}$ — an equality that **breaks under staggered timing** (next
-  chapter).
-- The static $\beta$ is an **average over a dynamic path**: over a long post period it
-  mixes the first years and the later ones, and it changes with the window. It also says
-  nothing about the **pre-trends**. The event study shows both.
-- The time effect can be made specific to a region, $f_{r(i),t}$. Treated and comparison
-  units are then compared **within the same region in the same year**, which removes
-  regional shocks (a drought, a regional aid scheme) from the comparison.
-- The **estimation window** is fixed before estimation. Years excluded for a documented
-  shock are named in advance, never after seeing the coefficients.
 
 ## The event-study specification
 
@@ -271,23 +258,20 @@ and conditioning on "passing" can itself distort the estimate (Roth, 2022).
 
 ## Sensitivity analysis: Rambachan and Roth (2023)
 
-Parallel trends rarely holds exactly. The pre-period coefficients show by how much the two
-groups drifted apart, from one year to the next, before the policy.
+\begin{center}
+\includegraphics[width=0.80\textwidth]{fig/sensitivity.png}
+\end{center}
 
-\begin{block}{The idea}
-Assume that after the policy the two groups would have drifted apart by no more than they
-did before it. Or by no more than twice as much, or three times as much. Each assumption
-gives a \textbf{range} for the effect in place of a single number.
-\end{block}
-
-- **Example.** The estimated effect in the first year after the policy is $-10$. Before
-  the policy, the gap between the groups never moved by more than 2 from one year to the
-  next. If the drift after the policy is no larger, the effect lies between $-12$ and
-  $-8$, and the conclusion holds.
-- The drift would have to be 5 times larger than any drift observed before the policy for
-  the range to reach zero. This multiple, noted $\bar M$, is the number to report. The
-  larger it is, the more robust the result.
-- The range also includes sampling error (package `HonestDiD`, R and Stata).
+\vspace{-4pt}
+\footnotesize
+- **(a)** Pre-trend test fails. The largest change from one year to the next is 0.8. If
+  the gap kept changing that much after the policy (grey band, $\bar M = 1$), the
+  estimated effects would still lie far outside the band.
+- **(b)** The bars stay below zero up to $\bar M \approx 8$. Despite the failed pre-trend
+  test, the conclusion that the policy lowered the outcome holds, because the violation
+  of parallel trends is small compared with the effect. A bar crossing zero already at
+  $\bar M < 1$ would mean that changes as large as those observed before the policy could
+  explain the whole effect.
 
 ## Placebo tests
 
@@ -335,9 +319,9 @@ little from one year to the next:
 The years of one unit are therefore not independent observations, and standard errors that
 treat them as independent are too small.
 
-- **Solution** (Bertrand et al., 2004). Cluster the standard errors by the unit followed
-  over time, the $i$ of $y_{it}$ (a firm, a farm, a person). The correlation between the
-  years of one unit is then allowed (cluster-robust estimator, panel chapter).
+- **Solution** (Bertrand et al., 2004). Cluster the standard errors at the level at which
+  the treatment is assigned. If each firm is treated or not, cluster by firm: all its
+  years form one cluster, and the correlation between them is allowed.
 - When the policy is assigned to whole groups of units (all the firms of a region),
   cluster by that group, because its units share the treatment and its shocks.
 - Report $G$, the number of clusters. The estimator requires a large $G$.
