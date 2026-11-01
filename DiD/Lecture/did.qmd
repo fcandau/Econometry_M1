@@ -76,7 +76,7 @@ difference-in-differences.
 1. The **canonical $2\times2$** — potential outcomes, parallel trends, the estimator.
 2. **The comparison group** — what makes a control credible.
 3. **Dynamics** — the event study.
-4. **Diagnostics** — pre-trends, bounds, placebos, composition.
+4. **Diagnostics** — sensitivity analysis, placebos.
 5. **Inference** — serial correlation, and one treated group.
 
 \vfill
@@ -243,17 +243,6 @@ $$ y_{it}=f_i+f_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}\{t-t^*_i=k\}\,D_i+u_{it}. $
 - A sloping pre-period ($\beta_k\neq0$ for $k<0$) is a failure of parallel trends before
   treatment: the comparison group has to be revised.
 
-## A caution on pre-trends
-
-\begin{block}{Passing a pre-trend test is reassuring, not decisive}
-Tests of $\beta_k=0$ for $k<0$ often have \textbf{low power} — they miss real violations —
-and conditioning on "passing" can itself distort the estimate (Roth, 2022).
-\end{block}
-
-- Treat them as **evidence**, alongside an economic case for why the trends should align.
-- **Plot** the coefficients; never rely on a single $p$-value (on event-study design and
-  visualization, see Freyaldenhoven et al. 2021).
-
 # Diagnostics
 
 ## Sensitivity analysis: Rambachan and Roth (2023)
@@ -288,23 +277,6 @@ A placebo in time is a $2\times2$ on pre-treatment years, a linear combination o
 pre-period coefficients: a rejection is a failure of parallel trends at that date. Placebo
 groups and outcomes test the channel: a rejection means some other shock separates the
 groups. Both belong in the paper.
-
-## Composition: the balanced-panel check
-
-Units enter and leave panels — and **leaving can be an effect** of the policy (firms close,
-farms exit, workers move).
-
-- In the full sample the post-period mean is computed on **survivors**; if the leavers were
-  the losers, the effect appears to fade faster than it does for any given unit.
-- **Check:** re-estimate on units present in every year of a window around the policy
-  (a *balanced* panel).
-- Report **both**. They answer different questions: the balanced panel gives the effect
-  on the units that stay, the full panel the effect on the observed population,
-  composition included. The direction of the gap depends on who leaves.
-
-\begin{center}
-\includegraphics[width=0.30\textwidth]{fig/survivorship_plane.png}
-\end{center}
 
 # Inference
 
