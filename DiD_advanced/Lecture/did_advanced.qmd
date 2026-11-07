@@ -184,26 +184,47 @@ Effect & Comparison & Assumption\\
 
 # In R
 
-## The switchers event study in R
+## In R: effects and placebos (DIDmultiplegtDYN)
+
+Four lines estimate the effects and the placebos of the switchers event study.
 
 ```r
-library(DIDmultiplegtDYN)
-# horizons 1..4 after the first switch, 3 placebos;
-# comparison = not-yet-switchers, same baseline treatment
-est <- did_multiplegt_dyn(
-  df, outcome = "y", group = "id", time = "t",
-  treatment = "d", effects = 4, placebo = 3,
-  cluster = "id", normalized = TRUE,
-  same_switchers = TRUE)
-summary(est)   # DID_l, placebos, switchers per horizon
+library(data.table); library(fixest); library(DIDmultiplegtDYN)
+d <- fread("rica_grippe_td6.csv")[canards_val > 0]             # 1
+d[, y := log(canards_val)]                                     # 2
+es <- did_multiplegt_dyn(as.data.frame(d), outcome = "y",
+        group = "id", time = "annee", treatment = "restriction",
+        effects = 8, placebo = 3, cluster = "id")              # 3
+es$results$p_jointplacebo                                      # 4
 ```
 
-- `normalized = TRUE` divides each effect by the cumulative treatment difference (the
-  per-period effect); `same_switchers = TRUE` fixes the composition across horizons.
-- `controls`, `trends_nonparam` (group-specific trends) and `by` (heterogeneity) exist;
-  each adds an assumption to state.
-- The output reports the number of switchers and comparison units at each horizon: put
-  it in the table.
+\small
+
+- **1**: one row per farm and year; only the years with a positive duck output are kept,
+  so that its log exists.
+- **2**: the outcome, the log of duck output.
+- **3**: switchers against not-yet-switchers: 8 effects after the first change and 3
+  placebos before, with standard errors clustered by farm. `es$results$Effects` and
+  `es$results$Placebos` give the event-study curve.
+- **4**: the joint test that the three placebos are zero.
+
+## In R: normalized effects and TWFE
+
+Two lines estimate the normalized effects and the TWFE coefficient to compare.
+
+```r
+nor <- did_multiplegt_dyn(as.data.frame(d), outcome = "y",
+        group = "id", time = "annee", treatment = "restriction",
+        effects = 8, placebo = 3, cluster = "id",
+        normalized = TRUE)                                     # 5
+feols(y ~ restriction | id + annee, d, cluster = ~id)          # 6
+```
+
+\small
+
+- **5**: the same estimation with `normalized = TRUE`, in which each effect is divided by
+  the years of treatment accumulated since the first change.
+- **6**: the TWFE coefficient, where the years after the switch-off count as untreated.
 
 ## References {.allowframebreaks}
 
