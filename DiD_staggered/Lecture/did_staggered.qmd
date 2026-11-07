@@ -17,311 +17,291 @@ nocite: |
   @rambachanroth2023, @roth2022, @roth2023, @stevensonwolfers2006
 ---
 
-## Sum up, and what comes next
+## Staggered adoption
 
-The previous chapter had **one treatment date**: a treated group, a control group, before and
-after. The event study put one coefficient per period; parallel trends was one assumption.
-
-Most policies occur in stages. They **roll out**: some units adopt early, some late,
-some never. Unilateral divorce laws by US state, minimum wages by state, broadband by
-municipality, emission-control areas by sea, organic certification by farm.
-
-\begin{block}{This chapter}
-Under staggered adoption the two-way fixed-effects regression mixes clean comparisons with
-comparisons to already-treated units, and its coefficient can be biased by treatment
-dynamics alone. This chapter shows why, and replaces the regression by an explicit
-construction: group-time effects identified under a stated parallel-trends assumption,
-then aggregated with transparent weights.
-\end{block}
-
-\footnotesize *Reference for the whole chapter: Baker, Callaway, Cunningham, Goodman-Bacon
-\& Sant'Anna (2026), "Difference-in-Differences Designs: A Practitioner's Guide".*
-
-## Roadmap
-
-1. **The setting** — cohorts, event time, never- and not-yet-treated units.
-2. **What TWFE computes** — forbidden comparisons, negative weights, contaminated leads
-   and lags.
-3. **Identification: the choice of comparison group and base period** — the parameter
-   $\text{ATT}(g,t)$; three parallel-trends assumptions (never-treated, not-yet-treated,
-   all periods); each estimator as the sample analogue of one of them.
-4. **Aggregation and workflow.**
-
-# Setting
-
-## Running example: unilateral divorce in the US
-
-Until the late 1960s a US divorce required both spouses' consent, or proof of fault.
-**Unilateral divorce** laws let one spouse end the marriage alone: California first (1970),
-most states in the 1970s, some never.
-
-- **Why it matters.** The **exit option** changes bargaining power inside the marriage.
-  Stevenson and Wolfers (2006) ask whether it reduced women's distress: **women's suicide
-  rates**, domestic violence, spousal homicide, by state and year.
-- **Why it is a staggered design.** One adoption year per state, some states never adopt,
-  effects that build up over years. Goodman-Bacon (2021) re-analysed it; we return to it at
-  each step.
+- In chapter 4, the treatment starts at **one date** for all treated units.
+- Most policies **roll out**: units adopt at different dates, and some never adopt.
+- Running example: **unilateral divorce** in the US. From 1970, states let one spouse end
+  the marriage without the other's consent. Most states adopt in the 1970s, some never do.
+- Stevenson and Wolfers (2006) estimate its effect on **women's suicide**.
 
 \begin{center}
 \includegraphics[height=0.3\textheight]{fig/cartoon.jpg}
 \end{center}
 
-## Cohorts, event time, comparison groups
+\vfill
+\footnotesize\emph{Reference for the whole chapter: Baker, Callaway, Cunningham,
+Goodman-Bacon \& Sant'Anna (2026), ``Difference-in-Differences Designs: A Practitioner's
+Guide''.}
 
-To write the divorce example in mathematics, consider a unit $i$ (a state) first treated at
-date $g_i$, its **cohort**; never-treated units have $g_i=\infty$. **Event time** is
-$k=t-g_i$, the number of years since adoption.
+## Roadmap
 
-- At date $t$ a unit is **treated** ($t\ge g_i$), **not yet treated** ($t<g_i<\infty$) or
-  **never treated**. In 1976, a state that adopted in 1973 is treated ($k=3$); a state
-  adopting in 1977 is not yet treated; a state that never adopts is never treated.
-- The last two are the candidate **comparison groups**: the chapter is about which of them
-  to use, and from which base year.
+1. **Setting**: cohorts and comparison groups.
+2. **The problem**: what TWFE computes when adoption is staggered.
+3. **The solution**: one $2\times2$ per cohort and date, three comparison groups, three
+   estimators.
+4. **Aggregation** and conclusion.
 
-# What TWFE computes
+# Setting
 
-## Two regressions, and the plan of the chapter
+## Cohorts and comparison groups
 
-With a treatment date per unit, two regressions come to mind: the **static TWFE** of
-chapter 4,
-$$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it},\qquad d_{it}=\mathbf{1}\{t\ge g_i\}, $$
-and its **dynamic** version, one coefficient per event time,
-$$ y_{it}=f_i+f_t+\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g_i=k\}+u_{it}. $$
-
-The next slides show what $\beta$ and the $\beta_k$ compute under staggered timing. The
-rest of the chapter replaces them by an explicit construction: one effect per cohort and
-date, identified under a stated parallel-trends assumption, then aggregated.
-
-## A simulated roll-out
+- **Cohort** $g_i$: the date at which unit $i$ is first treated ($g_i=\infty$ if never
+  treated).
+- **Event time** $k=t-g_i$: the number of periods since adoption.
+- At date $t$, a unit is **treated**, **not yet treated** or **never treated**. In 1976:
 
 \begin{center}
-\includegraphics[width=0.62\textwidth]{fig/three_groups.png}
+\begin{tikzpicture}[x=0.8cm,y=0.75cm,font=\footnotesize]
+  % lanes: grey = untreated, accent = treated
+  \foreach \y/\g/\lab in {3/3/{Adopts in 1973}, 2/7/{Adopts in 1977}, 1/11/{Never adopts}} {
+    \node[anchor=east] at (-0.3,\y) {\lab};
+    \draw[gray!60, line width=1.2pt] (0,\y) -- (10,\y);
+    \ifnum\g<11 \draw[accent, line width=3pt] (\g,\y) -- (10,\y); \fi
+  }
+  % 1976
+  \draw[dashed, gray] (6,0.35) -- (6,3.45);
+  \foreach \y in {1,2,3} \fill[black] (6,\y) circle (2.2pt);
+  \node[above=2pt, fill=white, inner sep=1.5pt, text=accent, font=\scriptsize\bfseries] at (6,3) {treated ($k=3$)};
+  \node[above=2pt, fill=white, inner sep=1.5pt, font=\scriptsize\bfseries] at (6,2) {not yet treated};
+  \node[above=2pt, fill=white, inner sep=1.5pt, font=\scriptsize\bfseries] at (6,1) {never treated};
+  % time axis
+  \draw[->] (0,0.3) -- (10.4,0.3);
+  \foreach \x in {0,...,10} {
+    \draw (\x,0.38) -- (\x,0.22);
+    \pgfmathtruncatemacro{\yr}{1970+\x}
+    \ifnum\x=6 \node[below, font=\scriptsize\bfseries] at (\x,0.22) {\yr};
+    \else \node[below, font=\scriptsize] at (\x,0.22) {\yr}; \fi
+  }
+\end{tikzpicture}
 \end{center}
 
-Three cohorts (early- and late-adopting states, never-adopting states); effects **grow**
-with time since treatment and differ across cohorts. In periods 4--6 the late cohort is a
-clean comparison for the early one. In periods 7--10 TWFE still compares the late cohort to
-the early one, already treated and still responding: its change is not a counterfactual, a
-**forbidden comparison**. That change contains the early cohort's continuing effect, and
-TWFE subtracts it: this is what a **negative weight** on a treatment effect means.
+- Not-yet-treated and never-treated units are the two possible **comparison groups**.
 
-## What TWFE computes under staggered adoption
+# TWFE
 
-With many periods and cohorts, the static TWFE coefficient is a weighted average of **all**
-the $2\times2$ DiDs in the data (Goodman-Bacon 2021),
-$$ \beta_{\text{TWFE}}=\sum_j w_j\,\text{DiD}_j,\qquad \textstyle\sum_j w_j=1: $$
-early vs never, late vs never, late vs early before the late adopts (clean), **early vs
-late** after the late adopts (forbidden).
+## The static TWFE under staggered adoption
 
-- The weights $w_j$ are positive and mechanical (group sizes, timing), unrelated to the
-  policy question.
-- In a forbidden term the control's change contains its own effect, which is subtracted:
-  some cohorts' treatment effects get **negative weights** (de Chaisemartin and
-  D'Haultfœuille 2020);
-  the coefficient can shrink or change sign even when every effect is positive (compare
-  compliers in IV, Rotemberg weights in shift-share).
-- Running example (Goodman-Bacon 2021): the static TWFE gives $-3.1$ suicides per million
-  women; without the forbidden comparisons the effect is higher and reaches $-5.4$.
+$$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it},\qquad d_{it}=\mathbf{1}\{t\ge g_i\} $$
 
-# Dynamic TWFE
+- $\hat\beta$ is a weighted average of **all** the $2\times2$ DiDs in the data
+  (Goodman-Bacon 2021).
+- With an early cohort, a late cohort and never-treated units, there are four $2\times2$s:
+  - early cohort against never-treated units;
+  - late cohort against never-treated units;
+  - early cohort against the late cohort, **before** the late cohort is treated;
+  - late cohort against the early cohort, **already treated**: a **forbidden comparison**.
+- The weights depend on group sizes and on the timing, not on the question asked.
 
-## The event study: contaminated leads and lags
+## The forbidden comparison
 
-The dynamic regression, one coefficient $\beta_k$ per event time, has the same problem. Sun
-and Abraham (2021) established it:
+\begin{center}
+\begin{tikzpicture}[x=0.8cm,y=0.6cm,font=\footnotesize]
+  % comparison windows (drawn first, behind the lanes)
+  \fill[gray!15] (3,1.6) rectangle (7,3.4);
+  \fill[accent!15] (7,1.6) rectangle (10,3.4);
+  \draw[accent, thick] (7,1.6) rectangle (10,3.4);
+  \node[align=center, font=\scriptsize] at (5,3.95) {clean: early vs late,\\ late not yet treated};
+  \node[align=center, font=\scriptsize\bfseries, text=accent] at (8.5,3.95) {forbidden: late vs early,\\ early already treated};
+  % lanes: grey = untreated, accent = treated
+  \foreach \y/\g/\lab in {3/3/{Early (1973)}, 2/7/{Late (1977)}, 1/11/{Never}} {
+    \node[anchor=east] at (-0.3,\y) {\lab};
+    \draw[gray!60, line width=1.2pt] (0,\y) -- (10,\y);
+    \ifnum\g<11 \draw[accent, line width=3pt] (\g,\y) -- (10,\y); \fi
+  }
+  % time axis
+  \draw[->] (0,0.3) -- (10.4,0.3);
+  \foreach \x in {0,...,10} {
+    \draw (\x,0.38) -- (\x,0.22);
+    \pgfmathtruncatemacro{\yr}{1970+\x}
+    \node[below, font=\scriptsize] at (\x,0.22) {\yr};
+  }
+\end{tikzpicture}
+\end{center}
 
-\begin{alertblock}{What the dynamic TWFE coefficients compute}
-Under staggered timing, each $\hat\beta_k$ is a weighted average of the cohorts' own effects
-$k$ periods after adoption \emph{and} of effects at \textbf{other} event times from
-\textbf{other} cohorts — with weights that can be negative. The leads ($k<0$) of the late
-cohorts are measured against early cohorts whose treatment effects are still building up, so
-\textbf{the early cohorts' effects appear in the late cohorts' pre-period coefficients}.
-\end{alertblock}
+\small
 
-- The contamination comes from the same source: cohorts serve as each other's controls
-  while they are themselves responding.
-- It vanishes only if effects are homogeneous across cohorts — precisely what an event
-  study is meant to explore.
+- From 1977, TWFE compares the late cohort with the early cohort, **already treated**.
+- The early cohort's outcome still moves because of its own treatment: its change is not
+  a counterfactual.
+- TWFE subtracts this change. The early cohort's effect receives a **negative weight**
+  (de Chaisemartin and D'Haultfœuille 2020), and $\hat\beta$ can shrink or even change
+  sign.
+- Divorce: TWFE gives $-3.1$ suicides per million women, $-5.4$ without the forbidden
+  comparisons (Goodman-Bacon 2021).
 
-# Three assumptions
+## The dynamic TWFE
 
-## The solution: one $2\times2$ per cohort and date
+$$ y_{it}=f_i+f_t+\sum_{k\neq-1}\beta_k\,\mathbf{1}\{t-g_i=k\}+u_{it} $$
 
-The solution to the problem just shown: estimate the effect of each cohort at each date
-from a comparison chosen explicitly, not left to the regression. This starts from a
-definition of the effect for one cohort at one date. Potential outcomes carry the adoption
-date: $Y_{it}(g)$ if first treated at $g$, $Y_{it}(\infty)$ if never; no anticipation:
-$Y_{it}(g)=Y_{it}(\infty)$ for $t<g$.
-$$ \text{ATT}(g,t)=\E\!\left[\,Y_{it}(g)-Y_{it}(\infty)\ \middle|\ g_i=g\,\right],\qquad t\ge g, $$
-the effect at date $t$ for the cohort first treated at $g$: a **group-specific event
-study**, one effect per cohort and date.
+- The event-study regression has the same problem (Sun and Abraham 2021).
+- Each $\hat\beta_k$ mixes the effect $k$ periods after adoption with the effects of
+  **other cohorts at other dates**.
+- The early cohorts' effects can appear in the **pre-period** coefficients, as if parallel
+  trends failed.
+- The problem disappears only if all cohorts have the same effect.
 
-\begin{block}{Forward engineering (Baker et al. 2026)}
-Every $\text{ATT}(g,t)$ is identified by a $2\times2$: cohort $g$ against a
-\textbf{comparison group}, period $t$ against a \textbf{base period}. A staggered design is
-a collection of such $2\times2$s, then an aggregation.
-\end{block}
+# Solution
 
-Two choices remain, *which comparison group* and *which base period*; both are set by the
-parallel-trends assumption one is willing to make (next slide).
+## The solution: choose the comparison group
+
+- TWFE mixes **all** the $2\times2$s, forbidden ones included.
+- Instead, estimate $\text{ATT}(g,t)$, the effect at date $t$ for the units first treated
+  at $g$, against a comparison group **chosen** by the researcher.
+- Choosing the comparison group is choosing a parallel-trends assumption.
+- The $\text{ATT}(g,t)$ are then averaged.
+
+## Example: the comparison group for $\text{ATT}(1973,t)$
+
+\begin{center}
+\begin{tikzpicture}[x=0.8cm,y=0.65cm,font=\footnotesize]
+  % lanes: grey = untreated, accent = treated
+  \foreach \y/\g/\lab in {3/3/{Adopts in 1973}, 2/7/{Adopts in 1977}, 1/11/{Never adopts}} {
+    \node[anchor=east] at (-0.3,\y) {\lab};
+    \draw[gray!60, line width=1.2pt] (0,\y) -- (10,\y);
+    \ifnum\g<11 \draw[accent, line width=3pt] (\g,\y) -- (10,\y); \fi
+  }
+  % base period g-1 = 1972 and date t = 1976
+  \draw[dashed, gray] (2,0.35) -- (2,3.55);
+  \draw[dashed, gray] (6,0.35) -- (6,3.55);
+  \draw[dashed, gray] (9,0.35) -- (9,3.55);
+  \node[above, font=\scriptsize\bfseries] at (2,3.55) {base: $g-1=1972$};
+  \node[above, font=\scriptsize\bfseries] at (6,3.55) {$t=1976$};
+  \node[above, font=\scriptsize\bfseries] at (9,3.55) {$t=1979$};
+  \foreach \y in {1,2,3} { \fill[black] (2,\y) circle (2pt); \fill[black] (6,\y) circle (2pt); }
+  \foreach \y in {1,3} \fill[black] (9,\y) circle (2pt);
+  % 1977 adopters are already treated in 1979: excluded from the comparison group
+  \draw[white, line width=4.5pt] (8.75,1.72) -- (9.25,2.28) (8.75,2.28) -- (9.25,1.72);
+  \draw[red, line width=2.5pt] (8.75,1.72) -- (9.25,2.28) (8.75,2.28) -- (9.25,1.72);
+  % time axis
+  \draw[->] (0,0.3) -- (10.4,0.3);
+  \foreach \x in {0,...,10} {
+    \draw (\x,0.38) -- (\x,0.22);
+    \pgfmathtruncatemacro{\yr}{1970+\x}
+    \node[below, font=\scriptsize] at (\x,0.22) {\yr};
+  }
+\end{tikzpicture}
+\end{center}
+
+- The effect in 1976 for the states that adopted in 1973: their change from 1972 to 1976,
+  minus the change of the comparison group over the same years.
+- Comparison group = **never-treated**: the states that never adopt.
+- Comparison group = **not-yet-treated**: the states that never adopt **and** the states
+  that adopt in 1977, still untreated in 1976.
+- For a later date, say 1979, the states that adopt in 1977 are already treated and leave
+  the not-yet-treated group: its composition changes with $t$.
 
 ## Three parallel-trends assumptions
 
+\begin{center}
 \small
-\begin{tabular}{@{}p{2.3cm} p{4.2cm} p{2.4cm} p{2.4cm}@{}}
+\begin{tabular}{@{}lll@{}}
 \toprule
- & Untreated trends equal for\ldots & Comparison & Base period\\
+Assumption & Comparison group & Base period\\
 \midrule
-\textbf{PT-never} & cohort $g$ and the \textbf{never-treated}, post-periods only & never-treated & $g-1$ only\\[3pt]
-\textbf{PT-not-yet} & cohort $g$ and \textbf{any unit not yet treated at $t$}, post-periods only & never- and not-yet-treated & $g-1$ only\\[3pt]
-\textbf{PT-all} & \textbf{every} pair of cohorts in \textbf{every} period, pre and post & any not-yet-treated & any pre-period (or their average)\\
+\textbf{PT-never} & never-treated units & $g-1$\\[3pt]
+\textbf{PT-not-yet} & units not yet treated at $t$, never-treated included & $g-1$\\[3pt]
+\textbf{PT-all} & not-yet-treated units & all pre-periods\\
 \bottomrule
 \end{tabular}
-\normalsize
+\end{center}
 
-\vspace{4pt}
-Running example: the states that adopted in 1973, observed in 1976. PT-never compares them
-with the never-adopting states only; PT-not-yet adds the states adopting in 1977 or later;
-PT-all also uses the years before 1972 as base periods.
+\vspace{6pt}
 
-- Under PT-never or PT-not-yet, parallel trends is imposed **only after** treatment; the
-  only justifiable base period is $g-1$. Pre-trends are *evidence*, not part of the
-  assumption.
-- Under PT-all, parallel **pre**-trends are part of the assumption — which buys precision
-  and makes pre-trends **testable** (more restrictions than parameters: the model is
-  over-identified).
+- PT-never and PT-not-yet assume parallel trends only **after** $g-1$.
+- PT-all also assumes them **before**, so the pre-trends become a test of the assumption.
 
-## Pre-trends in staggered designs
+## Three estimators
 
-- **Low power**: joint tests on the leads rarely detect violations of a magnitude that
-  matters (Roth 2022); visual inspection of the leads is not sufficient evidence.
-- Report **uniform confidence bands** for the whole event-study curve: a band that
-  contains the entire true curve with 95 % probability, wider than pointwise intervals
-  (the `did` package does by default).
-- **Sensitivity**: Rambachan and Roth (2023) bound the effect under violations no larger
-  than the largest pre-period deviation, which turns the inspection of pre-trends into a
-  quantitative statement.
-- Cohorts that plausibly **selected on recent outcomes** violate every version: remove them
-  and say so, rather than let them contaminate the comparison.
-
-## Estimators are sample analogues of an assumption
-
-\footnotesize
-\begin{tabular}{@{}p{3.4cm} p{1.9cm} p{6.2cm}@{}}
+\begin{center}
+\small
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.3cm} >{\raggedright\arraybackslash}p{2.1cm} >{\raggedright\arraybackslash}p{5.3cm}@{}}
 \toprule
-Estimator & Assumption & What it is\\
+Estimator & Assumption & How it works\\
 \midrule
-Callaway \& Sant'Anna (2021) & PT-never \emph{or} PT-not-yet & the plug-in (sample means in place of expectations) $[\bar y_{g,t}-\bar y_{g,g-1}]-[\bar y_{C,t}-\bar y_{C,g-1}]$, $C$ = never- or not-yet-treated\\[2pt]
-Sun \& Abraham (2021) & PT-never & the \textbf{same} never-treated estimand, from a regression with one dummy per cohort and event time\\[2pt]
-Wooldridge (2021); Gardner (2022) \texttt{did2s}; Borusyak et al. (2024) & PT-all & \textbf{imputation}: fit unit and time effects on untreated cells, average $y-\hat y(0)$ over treated cells; identical to each other in balanced panels\\
+Callaway and Sant'Anna (2021) & PT-never or PT-not-yet & computes each $\text{ATT}(g,t)$ as a $2\times2$, then averages them\\[4pt]
+Sun and Abraham (2021) & PT-never & the same effects, from a regression with one dummy per cohort and event time\\[4pt]
+Imputation (Borusyak et al. 2024; Gardner 2022) & PT-all & estimates the fixed effects on untreated observations, then predicts the untreated outcome of treated ones\\
 \bottomrule
 \end{tabular}
-\normalsize
+\end{center}
 
-\vspace{3pt}
-Sun--Abraham and Callaway--Sant'Anna (never-treated): **one estimand, two computations**.
-Imputation and Sun--Abraham: **two estimands** — they need not agree.
+\vfill
+\footnotesize\emph{Other estimators: stacked regressions (Cengiz et al. 2019); de Chaisemartin
+and D'Haultfœuille (2020), which also handle treatments that switch off (chapter 6).}
 
-\footnotesize
-*Other constructions: stacked regressions (Cengiz et al. 2019), one clean $2\times2$ per
-cohort; de Chaisemartin and D'Haultfœuille (2020), switchers against not-yet-switchers,
-which also allows the treatment to switch off (next chapter).*
+## Choosing an assumption
 
-## Which assumption? The real trade-off
+- **PT-all** (imputation): the most **precise**, but biased if the pre-trends are not
+  parallel.
+- **PT-never**: a comparison group of **fixed composition**, but never-treated units may be
+  **too few** or **too different**.
+- **PT-not-yet**: more comparison units than PT-never, but their composition **changes**
+  with $t$.
 
-\begin{columns}[T]
-\begin{column}{0.5\textwidth}
-\footnotesize
-\textbf{PT-all} (imputation)
-\begin{itemize}
-\item uses \emph{all} pre-periods and \emph{all} not-yet-treated units $\Rightarrow$ the most \textbf{precise};
-\item but imposes parallel \emph{pre}-trends: if they fail, the estimate is \textbf{biased};
-\item over-identified $\Rightarrow$ pre-trends become a genuine \textbf{test}.
-\end{itemize}
-\textbf{PT-never} (Sun--Abraham; Callaway--Sant'Anna with the never-treated)
-\begin{itemize}
-\item comparison group of \textbf{fixed composition}; no restriction on pre-trends;
-\item never uses a unit that chose to adopt \emph{because} of its recent outcomes;
-\item but never-treated units may be \textbf{too different}, or \textbf{too few}.
-\end{itemize}
-\end{column}
-\begin{column}{0.5\textwidth}
-\footnotesize
-\textbf{PT-not-yet} (Callaway--Sant'Anna with the not-yet-treated; de Chaisemartin--D'Haultfœuille)
-\begin{itemize}
-\item more comparison units than PT-never, without restricting pre-trends;
-\item the \textbf{middle ground} the Practitioner's Guide favours in its application;
-\item composition of the comparison changes over $t$ --- report it.
-\end{itemize}
-\begin{block}{Their advice}
-``We strongly recommend that researchers clearly state the specific parallel trends assumption
-they are actually imposing, to allow readers to discuss its plausibility.''
-\end{block}
-\end{column}
-\end{columns}
-
-## Why estimates differ
-
-Applied to the same data, two heterogeneity-robust estimators generally yield different
-estimates. Each is the sample counterpart of a different parallel-trends assumption, so a
-discrepancy points to the assumption on which they disagree:
-
-\small
-- Imputation $\ne$ Sun--Abraham: the pre-period is not parallel, so the PT-all assumption
-  is doing work, or the choice of base period matters.
-- Callaway--Sant'Anna never $\ne$ not-yet: never-treated and not-yet-treated units trend
-  differently;
-  one of the two is a poor comparison group, and the choice has to be defended.
-- Any of them $\ne$ TWFE: effects are dynamic or heterogeneous across cohorts, transmitted
-  into the TWFE coefficient by the forbidden comparisons.
-
-\normalsize
-\begin{alertblock}{Do not run these estimators as a robustness check}
-They estimate different parameters under different assumptions: their agreement is not a
-confirmation, their disagreement not a failure. Choose the assumption you can defend, report
-the corresponding estimator, and use the others to show which assumption the result depends
-on.
+\begin{alertblock}{Not a robustness check}
+The estimators rest on different assumptions, so their estimates differ. Report the
+estimator of the assumption you can defend; a gap with the others shows which assumption
+the result depends on.
 \end{alertblock}
 
 # Aggregation
 
-## From building blocks to one number
+## Aggregation
 
-$\text{ATT}(g,t)$ are many, noisy, and cohort-specific. Aggregate them with **non-negative,
-transparent** weights $w_{g,t}$ that sum to one:
-$$ \text{ATT}^{\text{agg}}=\sum_{g,t} w_{g,t}\,\text{ATT}(g,t). $$
+- Each $\text{ATT}(g,t)$ compares a **treated cohort**, the units first treated at $g$,
+  with a **comparison group**, never-treated or not-yet-treated units.
+- Forbidden comparisons concern the comparison group. **Aggregation concerns the treated
+  cohorts.**
+- The event study averages, for each $k$, the effects **of the treated cohorts** observed
+  $k$ years after adoption.
+- The late cohorts are observed **for fewer years** after adoption, so the cohorts in the
+  average **change with $k$**.
 
-- **Event-time** aggregation: for each $k$, average $\text{ATT}(g,g+k)$ over the cohorts
-  observed $k$ periods after treatment (all states $k$ years after their adoption),
-  weighted by **cohort size** — the staggered event study.
-- **Balanced** event time: keep only cohorts observed at every $k$ in a window, so the
-  composition does not change along the curve.
-- **Calendar-time** and **by-cohort** aggregations; an **overall** ATT as the average of
-  post-treatment event times.
+## Example: unequal windows
 
-\begin{block}{Contrast}
-TWFE is also an aggregation of $2\times2$s --- with weights chosen by the variance of
-$d_{it}$, not by the question, and with forbidden comparisons inside.
-\end{block}
+\begin{center}
+\begin{tikzpicture}[x=0.8cm,y=0.55cm,font=\footnotesize]
+  % lanes: grey = untreated, accent = treated, with event time k above the treated years
+  \foreach \y/\g/\lab in {4.0/3/{Adopts in 1973}, 1.6/7/{Adopts in 1977}} {
+    \node[anchor=east] at (-0.3,\y) {\lab};
+    \draw[gray!60, line width=1.2pt] (0,\y) -- (10,\y);
+    \draw[accent, line width=3pt] (\g,\y) -- (10,\y);
+    \foreach \x in {\g,...,10} {
+      \pgfmathtruncatemacro{\k}{\x-\g}
+      \node[above, font=\scriptsize, text=accent] at (\x,\y) {\k};
+    }
+  }
+  % braces over the observed post-adoption windows
+  \draw[decorate, decoration={brace, amplitude=5pt}, thick]
+    (3,4.65) -- (10,4.65) node[midway, above=5pt] {observed up to $k=7$};
+  \draw[decorate, decoration={brace, amplitude=5pt}, thick]
+    (7,2.25) -- (10,2.25) node[midway, above=5pt] {observed up to $k=3$};
+  % time axis
+  \draw[->] (0,0.6) -- (10.4,0.6);
+  \foreach \x in {0,...,10} {
+    \draw (\x,0.68) -- (\x,0.52);
+    \pgfmathtruncatemacro{\yr}{1970+\x}
+    \node[below, font=\scriptsize] at (\x,0.52) {\yr};
+  }
+\end{tikzpicture}
+\end{center}
 
-# Workflow
+- Data stop in 1980: the 1973 states are observed up to $k=7$, the 1977 states only up to
+  $k=3$.
+- From $k=0$ to $k=3$, the event study averages the two cohorts. **From $k=4$ on, it
+  covers only the 1973 states.**
+- A jump between $k=3$ and $k=4$ can therefore come from the 1977 states leaving the
+  average, with no change in the effect.
+- Either keep a window common to all cohorts ($k\le3$ here), or say it.
 
-## Conclusion: the forward-engineering workflow (Baker et al. 2026)
+## Conclusion
 
-\small
-1. **Define the target** — $\text{ATT}(g,t)$ and the aggregation you care about.
-2. **State the identifying assumptions** — which parallel trends (never / not-yet / all),
-   no-anticipation; argue them and bring pre-period evidence.
-3. **Choose the estimator** that is the sample analogue of those assumptions.
-4. **Discuss the source of uncertainty** — sampling (which units are observed) or
-   design-based (which units are treated); cluster accordingly.
-5. **Estimate.**
-6. **Sensitivity analysis** — bounds on parallel-trends violations; the same target under
-   the neighbouring assumption.
-7. **Heterogeneity** — by cohort, by event time, by group.
-8. **Keep learning** — if the assumptions are not credible, change design, not estimator.
+1. **Define the target**: which effects, which average.
+2. **Choose the comparison group**, that is the parallel-trends assumption, and defend it.
+3. **Estimate** with the corresponding estimator.
+4. **Check** the pre-trends and compare with the neighbouring assumption.
 
-\normalsize
 \begin{block}{On TWFE}
 ``It has well-understood, potentially serious, and easily remedied problems, and we do not
 recommend using it.'' --- Baker et al. (2026)
