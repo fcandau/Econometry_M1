@@ -24,8 +24,8 @@ ate = 1.6 * np.sqrt(d)                       # population dose-response, concave
 sel = 1.0 * d ** 2                           # selection term: high-dose units respond more
 att = ate + sel
 fig, ax = plt.subplots(figsize=(7.2, 3.7))
-ax.plot(d, att, color=BORDEAUX, lw=2.2, label=r"$\mathrm{ATT}(d\mid d)$: effect of dose $d$ on units that chose $d$")
-ax.plot(d, ate, color=BLUE, lw=2, ls="--", label=r"$\mathrm{ATE}(d)$: effect of dose $d$ on a random unit")
+ax.plot(d, att, color=BORDEAUX, lw=2.2, label=r"$\mathrm{ATT}(d\mid d)$: effect of dose $d$ on the units that received $d$")
+ax.plot(d, ate, color=BLUE, lw=2, ls="--", label=r"effect of dose $d$ if all units responded alike")
 d0 = 0.6
 ax.plot([d0], [1.6 * np.sqrt(d0) + d0 ** 2], "o", color=BORDEAUX, ms=5)
 h = 0.25
@@ -35,7 +35,7 @@ ax.plot([d0, d0 + h], [1.6 * np.sqrt(d0) + d0 ** 2, 1.6 * np.sqrt(d0) + d0 ** 2 
 ax.plot([d0, d0 + h], [1.6 * np.sqrt(d0) + d0 ** 2, 1.6 * np.sqrt(d0) + d0 ** 2 + s_ate * h], color=BLUE, lw=1, ls=":")
 ax.annotate("slope of the ATT curve:\ncausal response + selection", xy=(d0 + h, 1.6 * np.sqrt(d0) + d0 ** 2 + s_att * h),
             xytext=(0.30, 2.45), fontsize=8, color=BORDEAUX, arrowprops=dict(arrowstyle="->", color=BORDEAUX, lw=0.8))
-ax.annotate("causal response (ACR)\nat $d=0.6$", xy=(d0 + h, 1.6 * np.sqrt(d0) + d0 ** 2 + s_ate * h),
+ax.annotate("causal response\nat $d=0.6$", xy=(d0 + h, 1.6 * np.sqrt(d0) + d0 ** 2 + s_ate * h),
             xytext=(0.62, 0.45), fontsize=8, color=BLUE, arrowprops=dict(arrowstyle="->", color=BLUE, lw=0.8))
 ax.set_xlabel("Dose $d$ (0 = untreated)"); ax.set_ylabel("Effect on the outcome")
 ax.set_ylim(0, 3.1); ax.legend(loc="lower right", fontsize=8, frameon=False)

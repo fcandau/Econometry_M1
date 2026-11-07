@@ -91,7 +91,7 @@ $$ y_{it}=f_i+f_t+\beta\,d_{it}+u_{it},\qquad d_{it}=\mathbf{1}\{t\ge g_i\} $$
   - late cohort against never-treated units;
   - early cohort against the late cohort, **before** the late cohort is treated;
   - late cohort against the early cohort, **already treated**: a **forbidden comparison**.
-- The weights depend on group sizes and on the timing, not on the question asked.
+- The weights depend on group sizes and on the timing of adoption.
 
 ## The forbidden comparison
 
